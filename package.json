@@ -1,0 +1,31 @@
+{
+  "name": "ecomonitor-frontend-vue",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Frontend Vue 3 do EcoMonitor",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "axios": "^1.21.0",
+    "bootstrap": "^5.3.8",
+    "bootstrap-icons": "^1.13.2",
+    "chart.js": "^4.6.1",
+    "pinia": "^4.1.0",
+    "vue": "^3.5.44",
+    "vue-chartjs": "^5.3.4",
+    "vue-router": "^5.4.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^6.0.10",
+    "@vue/test-utils": "^2.5.1",
+    "jsdom": "^30.1.3",
+    "vite": "^8.3.5",
+    "vitest": "^5.1.0"
+  }
+}
