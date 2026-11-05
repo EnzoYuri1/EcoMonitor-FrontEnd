@@ -181,7 +181,7 @@ describe('montarConteudoPopup', () => {
     expect(html).toContain('Sinop/MT')
     expect(html).toContain('01/10/2026')
     expect(html).toContain('-11,8642, -55,5025')
-    expect(html).toContain('#EA580C')
+    expect(html).toContain('#FF8A4C')
   })
 
   it('escapa conteúdo vindo da API', () => {

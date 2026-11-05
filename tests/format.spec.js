@@ -73,8 +73,8 @@ describe('rótulos e cores de tipo', () => {
   })
 
   it('usa as cores da identidade visual', () => {
-    expect(corTipo('queimada')).toBe('#EA580C')
-    expect(corTipo('desmatamento')).toBe('#15803D')
+    expect(corTipo('queimada')).toBe('#FF8A4C')
+    expect(corTipo('desmatamento')).toBe('#4ADEC0')
     expect(corTipo('outro')).toBe('#6B7280')
   })
 })
