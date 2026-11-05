@@ -2,8 +2,10 @@
 
 Interface web do EcoMonitor para registro, consulta e visualização de
 ocorrências de queimadas e desmatamento. O projeto consome exclusivamente a
-API real do backend FastAPI, sem dados fictícios, mocks ou arquivos CSV de
-exemplo.
+API real do backend FastAPI na área autenticada, sem mocks ou arquivos CSV
+para alimentar as telas operacionais. A apresentação pública possui prévias
+visuais explicitamente demonstrativas para explicar o produto sem depender de
+uma sessão ou de ocorrências reais.
 
 Frontend em **Vue 3 + Vite + Bootstrap 5** para o EcoMonitor.
 
@@ -42,6 +44,7 @@ EcoMonitor-Frontend-Vue/
 │   ├── App.vue
 │   ├── config.js
 │   ├── assets/
+│   │   ├── amazon-rainforest.jpg
 │   │   └── styles.css
 │   ├── components/
 │   │   ├── AuthShell.vue
@@ -70,6 +73,7 @@ EcoMonitor-Frontend-Vue/
 │   │   ├── reports.js
 │   │   └── storage.js
 │   └── views/
+│       ├── LandingView.vue
 │       ├── DashboardView.vue
 │       ├── LoginView.vue
 │       ├── MapaView.vue
@@ -180,7 +184,26 @@ Ao servir o `dist/` em produção, configure o servidor estático para devolver
 `index.html` em rotas desconhecidas (fallback de SPA), pois o Vue Router usa
 `history` mode.
 
-## Funcionalidades
+## Apresentação pública e identidade visual
+
+- Landing page pública em `/`, sem sidebar da área autenticada.
+- Cabeçalho com navegação para funcionalidades e fluxo de uso, além das ações
+  de login e criação de conta.
+- Prévia demonstrativa de pressão no território com imagem aérea da Amazônia,
+  indicadores, legenda e ocorrência selecionada.
+- Seção de registros e evidências com imagens locais demonstrativas.
+- Login e cadastro compartilham o `AuthShell.vue` e exibem a Amazônia no painel
+  institucional, com composição responsiva.
+- Tema escuro claro, superfícies verdes, controles simples e foco visível.
+- As informações da landing, como `128` ocorrências e `3.842 ha`, são
+  ilustrativas e não representam dados retornados pela API.
+
+A imagem `src/assets/amazon-rainforest.jpg` é uma fotografia aérea do rio
+Amazonas na floresta amazônica, disponibilizada no Wikimedia Commons com
+origem NASA e licença de domínio público:
+[File:Amazon 57.53278W 2.71207S.jpg](https://commons.wikimedia.org/wiki/File:Amazon_57.53278W_2.71207S.jpg).
+
+## Funcionalidades da área autenticada
 
 - Login e cadastro de usuários contra a API real.
 - Login automático após o cadastro.
@@ -239,17 +262,19 @@ Ao servir o `dist/` em produção, configure o servidor estático para devolver
 
 | Rota | Tela | Proteção |
 |---|---|---|
+| `/` | Apresentação pública | Pública |
 | `/login` | Login | Pública |
 | `/cadastro` | Criar conta | Pública |
-| `/dashboard` | Dashboard | Autenticada |
-| `/ocorrencias` | Listagem e filtros | Autenticada |
-| `/ocorrencias/nova` | Nova ocorrência | Autenticada |
-| `/mapa` | Mapa interativo das ocorrências | Autenticada |
-| `/relatorios` | Relatórios consolidados e exportação CSV | Autenticada |
+| `/app/visao-geral` | Dashboard | Autenticada |
+| `/app/ocorrencias` | Listagem e filtros | Autenticada |
+| `/app/ocorrencias/nova` | Nova ocorrência | Autenticada |
+| `/app/mapa` | Mapa interativo das ocorrências | Autenticada |
+| `/app/relatorios` | Relatórios consolidados e exportação CSV | Autenticada |
 
-A rota `/` redireciona para `/dashboard`. Rotas inexistentes também são
-redirecionadas para o dashboard; se não houver sessão, o usuário vai para o
-login.
+Os caminhos antigos `/dashboard`, `/ocorrencias`, `/ocorrencias/nova`,
+`/ocorrencias/:id`, `/mapa` e `/relatorios` permanecem como redirecionamentos
+de compatibilidade para a área `/app`. Rotas inexistentes retornam para a
+apresentação pública.
 
 ## Autenticação e permissões
 
@@ -347,38 +372,41 @@ Ele pode continuar sendo usado como comparação ou fallback.
 
 1. Inicie o backend e confirme `GET http://127.0.0.1:8000/health`.
 2. Inicie o frontend e acesse `http://localhost:5173`.
-3. Confirme o redirecionamento para `/login`.
-4. Crie uma conta em `/cadastro` e verifique o login automático.
-5. Confirme o estado vazio do dashboard quando não houver ocorrências.
-6. Cadastre uma ocorrência com e sem coordenadas.
-7. Confirme os indicadores, a rosca, as barras e a evolução mensal.
-8. Na listagem, filtre por tipo, município e período.
-9. Altere o tamanho da página e navegue com Anterior/Próxima.
-10. Abra os detalhes de uma ocorrência.
-11. Edite somente a descrição e confirme que o `PATCH` foi parcial.
-12. Exclua uma ocorrência e confirme a remoção da lista.
-13. Entre com outro usuário e confirme que as ações de edição/exclusão não
+3. Confira a apresentação pública em `/`, incluindo a prévia amazônica e a
+   seção de evidências demonstrativas.
+4. Acesse `/login` e `/cadastro`; confirme a imagem da Amazônia no painel
+   institucional e o layout responsivo.
+5. Crie uma conta em `/cadastro` e verifique o login automático.
+6. Confirme o estado vazio do dashboard quando não houver ocorrências.
+7. Cadastre uma ocorrência com e sem coordenadas.
+8. Confirme os indicadores, a rosca, as barras e a evolução mensal.
+9. Na listagem, filtre por tipo, município e período.
+10. Altere o tamanho da página e navegue com Anterior/Próxima.
+11. Abra os detalhes de uma ocorrência.
+12. Edite somente a descrição e confirme que o `PATCH` foi parcial.
+13. Exclua uma ocorrência e confirme a remoção da lista.
+14. Entre com outro usuário e confirme que as ações de edição/exclusão não
     aparecem para ocorrências de terceiros.
-14. Acesse `/mapa` e confirme os marcadores, a legenda e o total exibido.
-15. Filtre o mapa por tipo, município e período.
-16. Use os botões "Ajustar" e "Brasil" e confira o enquadramento.
-17. Abra o popup de um marcador e confira tipo, local, data e coordenadas.
-18. Confirme a contagem de ocorrências sem coordenadas ou fora da área de
+15. Acesse `/app/mapa` e confirme os marcadores, a legenda e o total exibido.
+16. Filtre o mapa por tipo, município e período.
+17. Use os botões "Ajustar" e "Brasil" e confira o enquadramento.
+18. Abra o popup de um marcador e confira tipo, local, data e coordenadas.
+19. Confirme a contagem de ocorrências sem coordenadas ou fora da área de
     cobertura no rodapé do mapa.
-19. Acesse `/relatorios` e confira os indicadores, o período analisado, a
+20. Acesse `/app/relatorios` e confira os indicadores, o período analisado, a
     evolução mensal e o ranking de municípios.
-20. Filtre os relatórios por tipo, município e período e confirme que os
+21. Filtre os relatórios por tipo, município e período e confirme que os
     cards, gráficos e a tabela são recalculados.
-21. Exporte o CSV detalhado e o resumo por município, abra os arquivos no
+22. Exporte o CSV detalhado e o resumo por município, abra os arquivos no
     Excel e confira acentuação, colunas e separador.
-22. Aplique um período sem ocorrências e confirme o estado vazio.
-23. Pare o backend e confirme as mensagens de API offline.
-24. Reinicie o backend, faça login e confirme que o indicador de saúde fica
+23. Aplique um período sem ocorrências e confirme o estado vazio.
+24. Pare o backend e confirme as mensagens de API offline.
+25. Reinicie o backend, faça login e confirme que o indicador de saúde fica
     verde.
-25. Reduza `ACCESS_TOKEN_EXPIRE_MINUTES` no backend, aguarde a expiração e
+26. Reduza `ACCESS_TOKEN_EXPIRE_MINUTES` no backend, aguarde a expiração e
     confirme o retorno ao login.
-26. Abra o menu mobile e teste a navegação.
-27. Confirme que o link de documentação abre `http://127.0.0.1:8000/docs`.
+27. Abra o menu mobile e teste a navegação.
+28. Confirme que o link de documentação abre `http://127.0.0.1:8000/docs`.
 
 ## Solução de problemas
 
