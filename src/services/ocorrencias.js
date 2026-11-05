@@ -15,6 +15,40 @@ export async function listarOcorrencias(parametros = {}) {
   return data
 }
 
+export async function listarTodasOcorrencias(parametros = {}) {
+  const primeira = await listarOcorrencias({
+    ...parametros,
+    page: 1,
+    page_size: 100,
+  })
+
+  const totalPaginas = Math.max(1, primeira.pages || 1)
+  const itens = [...(primeira.items || [])]
+
+  if (totalPaginas > 1) {
+    const numeros = Array.from(
+      { length: totalPaginas - 1 },
+      (_, indice) => indice + 2,
+    )
+
+    const respostas = await Promise.all(
+      numeros.map((page) =>
+        listarOcorrencias({
+          ...parametros,
+          page,
+          page_size: 100,
+        }),
+      ),
+    )
+
+    for (const resposta of respostas) {
+      itens.push(...(resposta.items || []))
+    }
+  }
+
+  return { ...primeira, items: itens }
+}
+
 export async function criarOcorrencia(dados) {
   const { data } = await api.post('/ocorrencias', dados)
   return data

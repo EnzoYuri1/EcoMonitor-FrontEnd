@@ -14,7 +14,7 @@ import 'leaflet/dist/leaflet.css'
 import { RouterLink } from 'vue-router'
 
 import EmptyState from '@/components/EmptyState.vue'
-import { listarOcorrencias } from '@/services/ocorrencias'
+import { listarTodasOcorrencias } from '@/services/ocorrencias'
 import { obterEstatisticas } from '@/services/stats'
 import { TIPOS } from '@/utils/constants'
 import {
@@ -28,7 +28,6 @@ import {
   MAPA_PADDING_AJUSTE,
   MAPA_ZOOM_AJUSTE_MAXIMO,
   MAPA_ZOOM_INICIAL,
-  TAMANHO_PAGINA_MAPA,
   calcularLimites,
   contarPorTipo,
   dentroDoBrasil,
@@ -130,39 +129,6 @@ function parametrosListagem() {
     municipio: filtrosAplicados.municipio || undefined,
     data_inicio: filtrosAplicados.data_inicio || undefined,
     data_fim: filtrosAplicados.data_fim || undefined,
-    page_size: TAMANHO_PAGINA_MAPA,
-  }
-}
-
-async function buscarTodasOcorrencias() {
-  const primeira = await listarOcorrencias({
-    ...parametrosListagem(),
-    page: 1,
-  })
-
-  const totalPaginas = Math.max(1, primeira.pages || 1)
-  const itens = [...(primeira.items || [])]
-
-  if (totalPaginas > 1) {
-    const respostas = await Promise.all(
-      Array.from(
-        { length: totalPaginas - 1 },
-        (_, indice) =>
-          listarOcorrencias({
-            ...parametrosListagem(),
-            page: indice + 2,
-          }),
-      ),
-    )
-
-    for (const resposta of respostas) {
-      itens.push(...(resposta.items || []))
-    }
-  }
-
-  return {
-    itens,
-    total: primeira.total || 0,
   }
 }
 
@@ -268,13 +234,15 @@ async function carregar() {
   aviso.value = ''
 
   try {
-    const resultado = await buscarTodasOcorrencias()
+    const resultado = await listarTodasOcorrencias(
+      parametrosListagem(),
+    )
 
     if (requisicao !== sequenciaRequisicao) return
 
-    atualizarMunicipios(resultado.itens)
+    atualizarMunicipios(resultado.items)
 
-    const separadas = separarOcorrenciasMapeaveis(resultado.itens)
+    const separadas = separarOcorrenciasMapeaveis(resultado.items)
     const noBrasil = separadas.comCoordenadas.filter((item) =>
       dentroDoBrasil(item.latitude, item.longitude),
     )
@@ -283,7 +251,7 @@ async function carregar() {
     semCoordenadas.value = separadas.semCoordenadas.length
     foraDaArea.value =
       separadas.comCoordenadas.length - noBrasil.length
-    total.value = resultado.total
+    total.value = resultado.total || 0
 
     await nextTick()
 

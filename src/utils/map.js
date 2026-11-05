@@ -5,7 +5,6 @@ export const MAPA_CENTRO_BRASIL = [-15.78, -47.93]
 export const MAPA_ZOOM_INICIAL = 4
 export const MAPA_ZOOM_AJUSTE_MAXIMO = 12
 export const MAPA_PADDING_AJUSTE = [36, 36]
-export const TAMANHO_PAGINA_MAPA = 100
 
 export const BRASIL_LIMITES = [
   [-33.75, -73.99],

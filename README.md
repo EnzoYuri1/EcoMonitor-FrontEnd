@@ -68,6 +68,7 @@ EcoMonitor-Frontend-Vue/
 │   │   ├── constants.js
 │   │   ├── format.js
 │   │   ├── map.js
+│   │   ├── reports.js
 │   │   └── storage.js
 │   └── views/
 │       ├── DashboardView.vue
@@ -81,7 +82,8 @@ EcoMonitor-Frontend-Vue/
     ├── api.spec.js
     ├── auth.spec.js
     ├── format.spec.js
-    └── map.spec.js
+    ├── map.spec.js
+    └── reports.spec.js
 ```
 
 ## Instalação
@@ -220,8 +222,17 @@ Ao servir o `dist/` em produção, configure o servidor estático para devolver
   - estados de carregamento, vazio e API offline;
   - ocorrências sem coordenadas ou fora do território brasileiro são
     contabilizadas no rodapé e não aparecem no mapa.
+- Relatórios consolidados calculados no frontend sobre `/ocorrencias` e
+  `/stats`:
+  - filtros por tipo, município e período;
+  - indicadores de total, queimadas, desmatamentos e municípios atingidos;
+  - período analisado e evolução mensal empilhada por tipo;
+  - gráfico dos 10 municípios com mais ocorrências;
+  - tabela-resumo por município com queimadas, desmatamentos, total e
+    participação;
+  - exportação CSV detalhada das ocorrências e resumo por município;
+  - estados de carregamento, vazio, validação do período e API offline.
 - Indicador de saúde da API no menu, consultando `/health`.
-- Placeholder de Relatórios, mantendo o menu da versão Streamlit.
 - Layout responsivo: sidebar fixa no desktop e menu lateral no mobile.
 - Identidade visual verde, branco e verde-escuro.
 
@@ -235,7 +246,7 @@ Ao servir o `dist/` em produção, configure o servidor estático para devolver
 | `/ocorrencias` | Listagem e filtros | Autenticada |
 | `/ocorrencias/nova` | Nova ocorrência | Autenticada |
 | `/mapa` | Mapa interativo das ocorrências | Autenticada |
-| `/relatorios` | Placeholder de relatórios | Autenticada |
+| `/relatorios` | Relatórios consolidados e exportação CSV | Autenticada |
 
 A rota `/` redireciona para `/dashboard`. Rotas inexistentes também são
 redirecionadas para o dashboard; se não houver sessão, o usuário vai para o
@@ -302,6 +313,8 @@ Os testes não dependem do backend rodando:
   logout e mensagem de sessão.
 - `tests/map.spec.js` valida coordenadas, limites, contagem por tipo, escape
   de HTML e conteúdo dos popups.
+- `tests/reports.spec.js` valida resumo, agrupamento por município, evolução
+  mensal, descrição do período, percentuais e geração dos CSVs.
 
 O build de produção é gerado em `dist/`.
 
@@ -353,13 +366,20 @@ Ele pode continuar sendo usado como comparação ou fallback.
 17. Abra o popup de um marcador e confira tipo, local, data e coordenadas.
 18. Confirme a contagem de ocorrências sem coordenadas ou fora da área de
     cobertura no rodapé do mapa.
-19. Pare o backend e confirme as mensagens de API offline.
-20. Reinicie o backend, faça login e confirme que o indicador de saúde fica
+19. Acesse `/relatorios` e confira os indicadores, o período analisado, a
+    evolução mensal e o ranking de municípios.
+20. Filtre os relatórios por tipo, município e período e confirme que os
+    cards, gráficos e a tabela são recalculados.
+21. Exporte o CSV detalhado e o resumo por município, abra os arquivos no
+    Excel e confira acentuação, colunas e separador.
+22. Aplique um período sem ocorrências e confirme o estado vazio.
+23. Pare o backend e confirme as mensagens de API offline.
+24. Reinicie o backend, faça login e confirme que o indicador de saúde fica
     verde.
-21. Reduza `ACCESS_TOKEN_EXPIRE_MINUTES` no backend, aguarde a expiração e
+25. Reduza `ACCESS_TOKEN_EXPIRE_MINUTES` no backend, aguarde a expiração e
     confirme o retorno ao login.
-22. Abra o menu mobile e teste a navegação.
-23. Confirme que o link de documentação abre `http://127.0.0.1:8000/docs`.
+26. Abra o menu mobile e teste a navegação.
+27. Confirme que o link de documentação abre `http://127.0.0.1:8000/docs`.
 
 ## Solução de problemas
 
