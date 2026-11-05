@@ -6,22 +6,34 @@ import {
   onMounted,
   reactive,
   ref,
+  watch,
 } from 'vue'
 
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRoute } from 'vue-router'
 
 import EmptyState from '@/components/EmptyState.vue'
+import PageHeader from '@/components/PageHeader.vue'
+import SeverityBadge from '@/components/SeverityBadge.vue'
+import StatusBadge from '@/components/StatusBadge.vue'
+import TipoBadge from '@/components/TipoBadge.vue'
 import { listarTodasOcorrencias } from '@/services/ocorrencias'
-import { obterEstatisticas } from '@/services/stats'
-import { TIPOS } from '@/utils/constants'
+import { useAuthStore } from '@/stores/auth'
+import { useDemoStore } from '@/stores/demo'
+import { SEVERIDADES, STATUS, TIPOS, UFS } from '@/utils/constants'
+import {
+  filtrarOcorrencias,
+  mesMaisRepresentativo,
+} from '@/utils/demo'
 import {
   corTipo,
-  dataHojeISO,
+  formatarAreaComUnidade,
+  formatarData,
+  formatarMesLongo,
   formatarNumero,
-  rotuloTipo,
+  truncar,
 } from '@/utils/format'
 import {
   MAPA_CENTRO_BRASIL,
@@ -31,82 +43,110 @@ import {
   calcularLimites,
   contarPorTipo,
   dentroDoBrasil,
-  montarConteudoPopup,
+  formatarCoordenadas,
   separarOcorrenciasMapeaveis,
 } from '@/utils/map'
 
-const hoje = dataHojeISO()
+const route = useRoute()
+const auth = useAuthStore()
+const demo = useDemoStore()
 
 const filtros = reactive({
   tipo: '',
-  municipio: '',
+  estado: '',
+  severidade: '',
+  status: '',
   data_inicio: '',
   data_fim: '',
+  busca: '',
 })
 
-const filtrosAplicados = reactive({ ...filtros })
+const aplicados = reactive({ ...filtros })
 
+const todos = ref([])
 const carregando = ref(true)
 const erro = ref('')
 const aviso = ref('')
 
-const ocorrencias = ref([])
-const semCoordenadas = ref(0)
-const foraDaArea = ref(0)
-const total = ref(0)
-
-const municipios = ref([])
-const carregandoMunicipios = ref(false)
-const erroMunicipios = ref('')
+const selecionada = ref(null)
 
 const mapaEl = ref(null)
 const mapaPronto = ref(false)
 
 let mapa = null
 let camadaMarcadores = null
-let sequenciaRequisicao = 0
 
-const temFiltrosAtivos = computed(() =>
-  Boolean(
-    filtrosAplicados.tipo ||
-      filtrosAplicados.municipio ||
-      filtrosAplicados.data_inicio ||
-      filtrosAplicados.data_fim,
+const enriquecidos = computed(() =>
+  demo.enriquecerLista(
+    todos.value,
+    auth.nomeUsuario || 'Equipe de monitoramento',
   ),
 )
 
-const contagens = computed(() => contarPorTipo(ocorrencias.value))
+const filtradas = computed(() =>
+  filtrarOcorrencias(enriquecidos.value, aplicados),
+)
 
-const resumoMapa = computed(() => {
-  if (carregando.value) return 'Carregando ocorrências da API...'
+const separadas = computed(() =>
+  separarOcorrenciasMapeaveis(filtradas.value),
+)
+
+const mapeaveis = computed(() =>
+  separadas.value.comCoordenadas.filter((item) =>
+    dentroDoBrasil(item.latitude, item.longitude),
+  ),
+)
+
+const foraDaArea = computed(
+  () => separadas.value.comCoordenadas.length - mapeaveis.value.length,
+)
+
+const semCoordenadas = computed(
+  () => separadas.value.semCoordenadas.length,
+)
+
+const contagens = computed(() => contarPorTipo(mapeaveis.value))
+
+const temFiltrosAtivos = computed(() =>
+  Boolean(
+    aplicados.tipo ||
+      aplicados.estado ||
+      aplicados.severidade ||
+      aplicados.status ||
+      aplicados.data_inicio ||
+      aplicados.data_fim ||
+      aplicados.busca,
+  ),
+)
+
+const mesReferencia = computed(() => mesMaisRepresentativo(filtradas.value))
+
+const relacionadas = computed(() => {
+  if (!selecionada.value) return []
+
+  return filtradas.value
+    .filter(
+      (item) =>
+        item.id !== selecionada.value.id &&
+        item.municipio === selecionada.value.municipio &&
+        item.estado === selecionada.value.estado,
+    )
+    .slice(0, 4)
+})
+
+const resumoRecorte = computed(() => {
+  if (carregando.value) return 'Consultando as ocorrências da API...'
   if (erro.value) return 'Não foi possível carregar os dados.'
-  if (!total.value) return 'Nenhuma ocorrência encontrada.'
 
-  const partes = [
-    `${formatarNumero(ocorrencias.value.length)} de ${formatarNumero(
-      total.value,
-    )} ocorrências no mapa`,
-  ]
-
-  if (semCoordenadas.value) {
-    partes.push(
-      `${formatarNumero(semCoordenadas.value)} sem coordenadas`,
-    )
-  }
-
-  if (foraDaArea.value) {
-    partes.push(
-      `${formatarNumero(foraDaArea.value)} fora da área de cobertura`,
-    )
-  }
-
-  return partes.join(' · ')
+  return `${formatarNumero(mapeaveis.value.length)} de ${formatarNumero(
+    filtradas.value.length,
+  )} ocorrências no mapa`
 })
 
 const tituloVazio = computed(() => {
   if (temFiltrosAtivos.value) return 'Nenhuma ocorrência no mapa'
 
-  if (total.value > 0) return 'Ocorrências sem localização válida'
+  if (filtradas.value.length) return 'Ocorrências sem localização válida'
 
   return 'Nenhuma ocorrência cadastrada'
 })
@@ -116,46 +156,34 @@ const descricaoVazio = computed(() => {
     return 'Nenhuma ocorrência corresponde aos filtros selecionados. Ajuste ou limpe os filtros para tentar novamente.'
   }
 
-  if (total.value > 0) {
+  if (filtradas.value.length) {
     return 'As ocorrências encontradas não possuem coordenadas válidas dentro do território brasileiro. Edite os registros para informar a localização.'
   }
 
   return 'Cadastre ocorrências com latitude e longitude para visualizá-las no mapa.'
 })
 
-function parametrosListagem() {
-  return {
-    tipo: filtrosAplicados.tipo || undefined,
-    municipio: filtrosAplicados.municipio || undefined,
-    data_inicio: filtrosAplicados.data_inicio || undefined,
-    data_fim: filtrosAplicados.data_fim || undefined,
-  }
-}
-
-function atualizarMunicipios(itens) {
-  const nomes = new Set(municipios.value)
-
-  for (const item of itens) {
-    if (item?.municipio) nomes.add(item.municipio)
-  }
-
-  municipios.value = [...nomes].sort((a, b) =>
-    a.localeCompare(b, 'pt-BR'),
-  )
-}
-
-function criarIcone(tipo) {
-  const icone = tipo === 'queimada' ? 'bi-fire' : 'bi-tree'
-
+function criarIcone(tipo, ativo = false) {
   return L.divIcon({
     className: 'mapa-marcador',
-    html: `<span class="mapa-marcador-pino" style="--mapa-cor:${corTipo(
-      tipo,
-    )}"><i class="bi ${icone}"></i></span>`,
-    iconSize: [30, 30],
-    iconAnchor: [15, 30],
-    popupAnchor: [0, -26],
+    html: `<span class="mapa-marcador-pino${
+      ativo ? ' mapa-marcador-pino-ativo' : ''
+    }" style="--mapa-cor:${corTipo(tipo)}"></span>`,
+    iconSize: ativo ? [22, 22] : [16, 16],
+    iconAnchor: ativo ? [11, 11] : [8, 8],
   })
+}
+
+function selecionar(item) {
+  selecionada.value = item
+
+  if (!mapa || !item) return
+
+  mapa.flyTo(
+    [Number(item.latitude), Number(item.longitude)],
+    Math.max(mapa.getZoom(), 7),
+    { duration: 0.45 },
+  )
 }
 
 function renderizarMarcadores() {
@@ -163,20 +191,23 @@ function renderizarMarcadores() {
 
   camadaMarcadores.clearLayers()
 
-  for (const item of ocorrencias.value) {
+  for (const item of mapeaveis.value) {
+    const ativo = selecionada.value?.id === item.id
+
     const marcador = L.marker(
       [Number(item.latitude), Number(item.longitude)],
       {
-        icon: criarIcone(item.tipo),
-        title: `${rotuloTipo(item.tipo)} em ${item.municipio}/${item.estado}`,
+        icon: criarIcone(item.tipo, ativo),
+        title: `${item.codigo} · ${item.municipio}/${item.estado}`,
+        zIndexOffset: ativo ? 1000 : 0,
       },
     )
 
-    marcador.bindPopup(montarConteudoPopup(item), {
-      maxWidth: 320,
-      minWidth: 240,
-      autoPanPadding: [32, 32],
-    })
+    marcador.bindTooltip(
+      `${item.codigo} · ${item.municipio}/${item.estado}`,
+      { direction: 'top', offset: [0, -10] },
+    )
+    marcador.on('click', () => selecionar(item))
     camadaMarcadores.addLayer(marcador)
   }
 }
@@ -184,14 +215,13 @@ function renderizarMarcadores() {
 function ajustarAosMarcadores() {
   if (!mapa) return
 
-  const limites = calcularLimites(ocorrencias.value)
+  const limites = calcularLimites(mapeaveis.value)
 
   if (!limites) {
-    centralizarBrasil()
+    mapa.setView(MAPA_CENTRO_BRASIL, MAPA_ZOOM_INICIAL)
     return
   }
 
-  mapa.closePopup()
   mapa.fitBounds(limites, {
     padding: MAPA_PADDING_AJUSTE,
     maxZoom: MAPA_ZOOM_AJUSTE_MAXIMO,
@@ -200,8 +230,6 @@ function ajustarAosMarcadores() {
 
 function centralizarBrasil() {
   if (!mapa) return
-
-  mapa.closePopup()
   mapa.setView(MAPA_CENTRO_BRASIL, MAPA_ZOOM_INICIAL)
 }
 
@@ -227,74 +255,40 @@ function inicializarMapa() {
 }
 
 async function carregar() {
-  const requisicao = ++sequenciaRequisicao
-
   carregando.value = true
   erro.value = ''
   aviso.value = ''
 
   try {
-    const resultado = await listarTodasOcorrencias(
-      parametrosListagem(),
-    )
-
-    if (requisicao !== sequenciaRequisicao) return
-
-    atualizarMunicipios(resultado.items)
-
-    const separadas = separarOcorrenciasMapeaveis(resultado.items)
-    const noBrasil = separadas.comCoordenadas.filter((item) =>
-      dentroDoBrasil(item.latitude, item.longitude),
-    )
-
-    ocorrencias.value = noBrasil
-    semCoordenadas.value = separadas.semCoordenadas.length
-    foraDaArea.value =
-      separadas.comCoordenadas.length - noBrasil.length
-    total.value = resultado.total || 0
+    const resultado = await listarTodasOcorrencias()
+    todos.value = resultado.items || []
 
     await nextTick()
 
-    if (requisicao !== sequenciaRequisicao) return
+    const idRota = route.query.id
+    const alvo = idRota
+      ? mapeaveis.value.find(
+          (item) => String(item.id) === String(idRota),
+        )
+      : null
 
+    selecionada.value = alvo || mapeaveis.value[0] || null
     renderizarMarcadores()
-    ajustarAosMarcadores()
+
+    if (alvo) {
+      selecionar(alvo)
+    } else {
+      ajustarAosMarcadores()
+    }
   } catch (error) {
-    if (requisicao !== sequenciaRequisicao) return
-
-    ocorrencias.value = []
-    semCoordenadas.value = 0
-    foraDaArea.value = 0
-    total.value = 0
-
+    todos.value = []
+    selecionada.value = null
     camadaMarcadores?.clearLayers()
     centralizarBrasil()
-
     erro.value =
       error?.message || 'Não foi possível carregar as ocorrências.'
   } finally {
-    if (requisicao === sequenciaRequisicao) {
-      carregando.value = false
-    }
-  }
-}
-
-async function carregarMunicipios() {
-  carregandoMunicipios.value = true
-  erroMunicipios.value = ''
-
-  try {
-    const estatisticas = await obterEstatisticas()
-    const nomes = (estatisticas.por_municipio || [])
-      .map((item) => item.municipio)
-      .filter(Boolean)
-
-    atualizarMunicipios(nomes.map((municipio) => ({ municipio })))
-  } catch {
-    erroMunicipios.value =
-      'Não foi possível carregar a lista de municípios. Use os filtros de tipo e período.'
-  } finally {
-    carregandoMunicipios.value = false
+    carregando.value = false
   }
 }
 
@@ -310,32 +304,53 @@ function aplicarFiltros() {
     return
   }
 
-  Object.assign(filtrosAplicados, filtros)
-  carregar()
+  Object.assign(aplicados, filtros)
+  selecionada.value = mapeaveis.value[0] || null
 }
 
 function limparFiltros() {
   Object.assign(filtros, {
     tipo: '',
-    municipio: '',
+    estado: '',
+    severidade: '',
+    status: '',
     data_inicio: '',
     data_fim: '',
+    busca: '',
   })
-  Object.assign(filtrosAplicados, filtros)
+  Object.assign(aplicados, filtros)
   aviso.value = ''
-  carregar()
+  selecionada.value = mapeaveis.value[0] || null
 }
+
+watch(
+  mapeaveis,
+  async () => {
+    await nextTick()
+    renderizarMarcadores()
+    ajustarAosMarcadores()
+
+    if (
+      selecionada.value &&
+      !mapeaveis.value.some((item) => item.id === selecionada.value.id)
+    ) {
+      selecionada.value = mapeaveis.value[0] || null
+    }
+  },
+  { deep: true },
+)
+
+watch(selecionada, () => {
+  renderizarMarcadores()
+})
 
 onMounted(async () => {
   await nextTick()
   inicializarMapa()
-  carregarMunicipios()
   carregar()
 })
 
 onBeforeUnmount(() => {
-  sequenciaRequisicao += 1
-
   if (mapa) {
     mapa.remove()
     mapa = null
@@ -348,299 +363,399 @@ onBeforeUnmount(() => {
 
 <template>
   <div>
-    <div class="mb-4">
-      <h2 class="h3 fw-bold mb-1">Mapa</h2>
-      <p class="text-secondary mb-0">
-        Visualização geográfica das ocorrências ambientais cadastradas,
-        com dados carregados diretamente da API.
-      </p>
-    </div>
-
-    <form
-      class="card filter-card mb-3"
-      @submit.prevent="aplicarFiltros"
+    <PageHeader
+      eyebrow="Monitoramento"
+      titulo="Mapa de monitoramento"
+      descricao="Explore a distribuição geográfica das ocorrências e selecione um ponto para consultar o contexto do registro."
     >
-      <div class="card-body p-3 p-md-4">
-        <div class="row g-3 align-items-end">
-          <div class="col-sm-6 col-lg-3">
-            <label class="form-label" for="mapa-tipo">Tipo</label>
-            <select
-              id="mapa-tipo"
-              v-model="filtros.tipo"
-              class="form-select"
-            >
-              <option value="">Todos os tipos</option>
-              <option
-                v-for="tipo in TIPOS"
-                :key="tipo.value"
-                :value="tipo.value"
-              >
-                {{ tipo.label }}
-              </option>
-            </select>
-          </div>
+      <template #acoes>
+        <RouterLink class="btn btn-outline-secondary" :to="{ name: 'ocorrencias' }">
+          <i class="bi bi-list-check me-2" aria-hidden="true"></i>
+          Ver lista
+        </RouterLink>
+        <RouterLink class="btn btn-primary" :to="{ name: 'nova-ocorrencia' }">
+          <i class="bi bi-plus-lg me-2" aria-hidden="true"></i>
+          Nova ocorrência
+        </RouterLink>
+      </template>
+    </PageHeader>
 
-          <div class="col-sm-6 col-lg-3">
-            <label class="form-label" for="mapa-municipio">
-              Município
-            </label>
-            <select
-              id="mapa-municipio"
-              v-model="filtros.municipio"
-              class="form-select"
-              :disabled="carregandoMunicipios && !municipios.length"
-            >
-              <option value="">
-                {{
-                  carregandoMunicipios && !municipios.length
-                    ? 'Carregando municípios...'
-                    : 'Todos os municípios'
-                }}
-              </option>
-              <option
-                v-for="municipio in municipios"
-                :key="municipio"
-                :value="municipio"
-              >
-                {{ municipio }}
-              </option>
-            </select>
-            <div
-              v-if="erroMunicipios"
-              class="form-text text-warning-emphasis"
-            >
-              {{ erroMunicipios }}
-            </div>
-          </div>
+    <form class="filters-bar mapa-filtros" @submit.prevent="aplicarFiltros">
+      <div class="filter-field">
+        <label for="mapa-tipo">Tipo</label>
+        <select id="mapa-tipo" v-model="filtros.tipo" class="form-select">
+          <option value="">Todos</option>
+          <option v-for="tipo in TIPOS" :key="tipo.value" :value="tipo.value">
+            {{ tipo.label }}
+          </option>
+        </select>
+      </div>
 
-          <div class="col-6 col-lg-2">
-            <label class="form-label" for="mapa-data-inicio">
-              Data inicial
-            </label>
-            <input
-              id="mapa-data-inicio"
-              v-model="filtros.data_inicio"
-              type="date"
-              class="form-control"
-              :max="hoje"
-            />
-          </div>
+      <div class="filter-field">
+        <label for="mapa-estado">Estado</label>
+        <select id="mapa-estado" v-model="filtros.estado" class="form-select">
+          <option value="">Todas as UF</option>
+          <option v-for="uf in UFS" :key="uf" :value="uf">{{ uf }}</option>
+        </select>
+      </div>
 
-          <div class="col-6 col-lg-2">
-            <label class="form-label" for="mapa-data-fim">
-              Data final
-            </label>
-            <input
-              id="mapa-data-fim"
-              v-model="filtros.data_fim"
-              type="date"
-              class="form-control"
-              :max="hoje"
-            />
-          </div>
-
-          <div class="col-lg-2 d-flex gap-2">
-            <button
-              type="submit"
-              class="btn btn-primary flex-grow-1"
-              :disabled="carregando"
-            >
-              <i class="bi bi-funnel me-1" aria-hidden="true"></i>
-              Aplicar
-            </button>
-            <button
-              type="button"
-              class="btn btn-outline-secondary"
-              title="Limpar filtros"
-              aria-label="Limpar filtros"
-              @click="limparFiltros"
-            >
-              <i class="bi bi-x-lg" aria-hidden="true"></i>
-            </button>
-          </div>
-        </div>
-
-        <div
-          v-if="aviso"
-          class="alert alert-warning py-2 px-3 small mt-3 mb-0"
-          role="alert"
+      <div class="filter-field">
+        <label for="mapa-severidade">Severidade</label>
+        <select
+          id="mapa-severidade"
+          v-model="filtros.severidade"
+          class="form-select"
         >
-          {{ aviso }}
+          <option value="">Todas</option>
+          <option
+            v-for="opcao in SEVERIDADES"
+            :key="opcao.value"
+            :value="opcao.value"
+          >
+            {{ opcao.label }}
+          </option>
+        </select>
+      </div>
+
+      <div class="filter-field">
+        <label for="mapa-status">Status</label>
+        <select id="mapa-status" v-model="filtros.status" class="form-select">
+          <option value="">Todos</option>
+          <option
+            v-for="opcao in STATUS"
+            :key="opcao.value"
+            :value="opcao.value"
+          >
+            {{ opcao.label }}
+          </option>
+        </select>
+      </div>
+
+      <div class="filter-field">
+        <label for="mapa-inicio">Data inicial</label>
+        <input
+          id="mapa-inicio"
+          v-model="filtros.data_inicio"
+          type="date"
+          class="form-control"
+        />
+      </div>
+
+      <div class="filter-field">
+        <label for="mapa-fim">Data final</label>
+        <input
+          id="mapa-fim"
+          v-model="filtros.data_fim"
+          type="date"
+          class="form-control"
+        />
+      </div>
+
+      <div class="filter-field filter-field-grow">
+        <label for="mapa-busca">Busca</label>
+        <div class="search-field">
+          <i class="bi bi-search" aria-hidden="true"></i>
+          <input
+            id="mapa-busca"
+            v-model="filtros.busca"
+            type="search"
+            class="form-control"
+            placeholder="Código, município ou UF"
+          />
         </div>
+      </div>
+
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary">
+          <i class="bi bi-funnel me-1" aria-hidden="true"></i>
+          Aplicar
+        </button>
+        <button
+          type="button"
+          class="btn btn-outline-secondary"
+          title="Limpar filtros"
+          aria-label="Limpar filtros"
+          @click="limparFiltros"
+        >
+          <i class="bi bi-x-lg" aria-hidden="true"></i>
+          <span>Limpar filtros</span>
+        </button>
       </div>
     </form>
 
-    <div class="card mapa-card overflow-hidden">
-      <div
-        class="card-header d-flex flex-wrap align-items-center justify-content-between gap-2"
-      >
-        <div class="min-w-0">
-          <h3 class="h6 fw-bold mb-1">
-            Ocorrências georreferenciadas
-          </h3>
-          <p
-            class="small text-secondary mb-0"
-            aria-live="polite"
-          >
-            {{ resumoMapa }}
-          </p>
+    <div
+      v-if="aviso"
+      class="alert alert-warning d-flex align-items-center gap-2"
+      role="alert"
+    >
+      <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+      {{ aviso }}
+    </div>
+
+    <div v-if="erro" class="alert alert-danger d-flex flex-wrap align-items-center gap-2" role="alert">
+      <i class="bi bi-wifi-off" aria-hidden="true"></i>
+      <span class="flex-grow-1">{{ erro }}</span>
+      <button type="button" class="btn btn-sm btn-outline-danger" @click="carregar">
+        Tentar novamente
+      </button>
+    </div>
+
+    <div class="mapa-layout">
+      <section class="panel mapa-panel">
+        <div class="mapa-toolbar">
+          <div class="mapa-contagem">
+            <strong>{{ formatarNumero(mapeaveis.length) }}</strong>
+            <span>pontos no mapa</span>
+            <span class="topbar-divider mx-1" aria-hidden="true"></span>
+            <span>{{ resumoRecorte }}</span>
+          </div>
+
+          <div class="d-flex flex-wrap gap-2">
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-secondary"
+              :disabled="!mapaPronto || !mapeaveis.length"
+              @click="ajustarAosMarcadores"
+            >
+              <i class="bi bi-arrows-fullscreen me-1" aria-hidden="true"></i>
+              Ajustar
+            </button>
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-secondary"
+              :disabled="!mapaPronto"
+              @click="centralizarBrasil"
+            >
+              <i class="bi bi-globe-americas me-1" aria-hidden="true"></i>
+              Brasil
+            </button>
+          </div>
         </div>
 
-        <div class="d-flex flex-wrap align-items-center gap-2">
-          <span
-            class="badge rounded-pill text-bg-light border"
-            aria-label="Ocorrências exibidas no mapa"
-          >
-            <i class="bi bi-geo-alt me-1" aria-hidden="true"></i>
-            {{ formatarNumero(ocorrencias.length) }} no mapa
+        <div class="mapa-wrap">
+          <div
+            ref="mapaEl"
+            class="mapa-canvas"
+            role="application"
+            aria-label="Mapa interativo de ocorrências ambientais"
+          ></div>
+
+          <div class="mapa-legenda" aria-label="Legenda e contagem por tipo">
+            <p class="mapa-legenda-titulo">Legenda</p>
+            <ul class="mapa-legenda-lista">
+              <li
+                v-for="tipo in TIPOS"
+                :key="tipo.value"
+                class="mapa-legenda-item"
+              >
+                <span
+                  class="mapa-legenda-cor"
+                  :style="{ backgroundColor: corTipo(tipo.value) }"
+                  aria-hidden="true"
+                ></span>
+                <span class="mapa-legenda-rotulo">{{ tipo.label }}</span>
+                <span class="mapa-legenda-contagem">
+                  {{ formatarNumero(contagens[tipo.value] || 0) }}
+                </span>
+              </li>
+            </ul>
+          </div>
+
+          <div v-if="carregando" class="mapa-overlay">
+            <div class="mapa-overlay-card text-center">
+              <div class="spinner-border text-primary" role="status" aria-hidden="true"></div>
+              <p class="mt-3 mb-1"><strong>Carregando ocorrências</strong></p>
+              <p class="texto-3 small mb-0">Consultando a API do EcoMonitor...</p>
+            </div>
+          </div>
+
+          <div v-else-if="!mapeaveis.length" class="mapa-overlay">
+            <div class="mapa-overlay-card">
+              <EmptyState
+                :titulo="tituloVazio"
+                :descricao="descricaoVazio"
+                icone="bi-geo-alt"
+              >
+                <button
+                  v-if="temFiltrosAtivos"
+                  type="button"
+                  class="btn btn-outline-primary"
+                  @click="limparFiltros"
+                >
+                  <i class="bi bi-x-circle me-2" aria-hidden="true"></i>
+                  Limpar filtros
+                </button>
+                <RouterLink
+                  v-else
+                  class="btn btn-primary"
+                  :to="{ name: 'nova-ocorrencia' }"
+                >
+                  <i class="bi bi-plus-lg me-2" aria-hidden="true"></i>
+                  Cadastrar ocorrência
+                </RouterLink>
+              </EmptyState>
+            </div>
+          </div>
+        </div>
+
+        <div class="mapa-rodape">
+          <span>
+            <i class="bi bi-info-circle me-1" aria-hidden="true"></i>
+            Ocorrências sem coordenadas válidas ou fora do território brasileiro
+            não aparecem no mapa.
           </span>
-          <button
-            type="button"
-            class="btn btn-sm btn-outline-secondary"
-            :disabled="
-              !mapaPronto || carregando || !ocorrencias.length
-            "
-            @click="ajustarAosMarcadores"
-          >
-            <i class="bi bi-arrows-fullscreen me-1" aria-hidden="true"></i>
-            Ajustar
-          </button>
-          <button
-            type="button"
-            class="btn btn-sm btn-outline-secondary"
-            :disabled="!mapaPronto"
-            @click="centralizarBrasil"
-          >
-            <i class="bi bi-globe-americas me-1" aria-hidden="true"></i>
-            Brasil
-          </button>
+          <span class="d-flex flex-wrap gap-2">
+            <span v-if="semCoordenadas" class="badge eco-badge status-badge" style="color: #f6c453; background-color: rgba(246, 196, 83, 0.1); border-color: rgba(246, 196, 83, 0.35)">
+              {{ formatarNumero(semCoordenadas) }} sem coordenadas
+            </span>
+            <span v-if="foraDaArea" class="badge eco-badge status-badge" style="color: #f6c453; background-color: rgba(246, 196, 83, 0.1); border-color: rgba(246, 196, 83, 0.35)">
+              {{ formatarNumero(foraDaArea) }} fora da cobertura
+            </span>
+          </span>
         </div>
-      </div>
+      </section>
 
-      <div class="mapa-wrapper">
-        <div
-          ref="mapaEl"
-          class="mapa-canvas"
-          role="application"
-          aria-label="Mapa interativo de ocorrências ambientais"
-        ></div>
+      <aside class="contexto-panel">
+        <template v-if="selecionada">
+          <p class="contexto-label">Ocorrência selecionada</p>
+          <p class="contexto-codigo">{{ selecionada.codigo }}</p>
+          <p class="contexto-local">
+            {{ selecionada.municipio }}/{{ selecionada.estado }} ·
+            {{ formatarData(selecionada.data_ocorrencia) }}
+          </p>
 
-        <div
-          class="mapa-legenda shadow-sm"
-          aria-label="Legenda e contagem por tipo"
-        >
-          <p class="mapa-legenda-titulo">Legenda</p>
-          <ul class="mapa-legenda-lista">
-            <li
+          <div class="contexto-badges">
+            <TipoBadge :tipo="selecionada.tipo" />
+            <SeverityBadge :severidade="selecionada.severidade" />
+            <StatusBadge :status="selecionada.status" />
+          </div>
+
+          <dl class="contexto-dados">
+            <div>
+              <dt>Área estimada</dt>
+              <dd>{{ formatarAreaComUnidade(selecionada.area_estimada) }}</dd>
+            </div>
+            <div>
+              <dt>Bioma</dt>
+              <dd>{{ selecionada.bioma }}</dd>
+            </div>
+            <div>
+              <dt>Coordenadas</dt>
+              <dd class="mono-num">
+                {{
+                  formatarCoordenadas(
+                    selecionada.latitude,
+                    selecionada.longitude,
+                  )
+                }}
+              </dd>
+            </div>
+            <div>
+              <dt>Responsável</dt>
+              <dd>
+                {{
+                  Number(selecionada.created_by) === Number(auth.userId)
+                    ? 'Você'
+                    : 'Outro usuário'
+                }}
+              </dd>
+            </div>
+          </dl>
+
+          <p class="contexto-resumo">
+            {{ truncar(selecionada.descricao, 220) }}
+          </p>
+
+          <RouterLink
+            class="btn btn-primary w-100"
+            :to="{
+              name: 'ocorrencia-detalhe',
+              params: { id: selecionada.id },
+            }"
+          >
+            Abrir detalhe
+            <i class="bi bi-arrow-right ms-1" aria-hidden="true"></i>
+          </RouterLink>
+
+          <div class="contexto-relacionados">
+            <h3>No mesmo município</h3>
+
+            <template v-if="relacionadas.length">
+              <button
+                v-for="item in relacionadas"
+                :key="item.id"
+                type="button"
+                class="contexto-relacionado w-100 text-start"
+                @click="selecionar(item)"
+              >
+                <span>
+                  <strong class="d-block">{{ item.codigo }}</strong>
+                  <small class="texto-3">
+                    {{ formatarData(item.data_ocorrencia) }}
+                  </small>
+                </span>
+                <TipoBadge :tipo="item.tipo" />
+              </button>
+            </template>
+
+            <p v-else class="texto-3 small mb-0">
+              Nenhum outro registro no mesmo município para este recorte.
+            </p>
+          </div>
+
+          <p class="contexto-nota">
+            Severidade, status, área e bioma são metadados demonstrativos.
+            Nada é gravado no backend.
+          </p>
+        </template>
+
+        <template v-else>
+          <p class="contexto-label">Resumo do recorte</p>
+          <p class="contexto-codigo">
+            {{ formatarNumero(filtradas.length) }}
+          </p>
+          <p class="contexto-local">
+            ocorrências encontradas{{ temFiltrosAtivos ? ' nos filtros atuais' : '' }}
+          </p>
+
+          <div class="contexto-badges">
+            <TipoBadge
               v-for="tipo in TIPOS"
               :key="tipo.value"
-              class="mapa-legenda-item"
-            >
-              <span
-                class="mapa-legenda-cor"
-                :style="{ backgroundColor: corTipo(tipo.value) }"
-                aria-hidden="true"
-              ></span>
-              <span class="mapa-legenda-rotulo">{{ tipo.label }}</span>
-              <span class="mapa-legenda-contagem">
-                {{ formatarNumero(contagens[tipo.value] || 0) }}
-              </span>
-            </li>
-          </ul>
-        </div>
-
-        <div v-if="carregando" class="mapa-overlay">
-          <div class="mapa-overlay-card text-center">
-            <div
-              class="spinner-border text-success"
-              role="status"
-              aria-hidden="true"
-            ></div>
-            <p class="fw-semibold mt-3 mb-1">
-              Carregando ocorrências
-            </p>
-            <p class="small text-secondary mb-0">
-              Consultando a API do EcoMonitor...
-            </p>
+              :tipo="tipo.value"
+            />
           </div>
-        </div>
 
-        <div v-else-if="erro" class="mapa-overlay">
-          <div class="mapa-overlay-card">
-            <EmptyState
-              titulo="API indisponível"
-              :descricao="erro"
-              icone="bi-cloud-slash"
-            >
-              <button
-                type="button"
-                class="btn btn-primary"
-                @click="carregar"
-              >
-                <i
-                  class="bi bi-arrow-clockwise me-2"
-                  aria-hidden="true"
-                ></i>
-                Tentar novamente
-              </button>
-            </EmptyState>
-          </div>
-        </div>
+          <dl class="contexto-dados">
+            <div>
+              <dt>Queimadas</dt>
+              <dd>{{ formatarNumero(contagens.queimada || 0) }}</dd>
+            </div>
+            <div>
+              <dt>Desmatamentos</dt>
+              <dd>{{ formatarNumero(contagens.desmatamento || 0) }}</dd>
+            </div>
+            <div>
+              <dt>No mapa</dt>
+              <dd>{{ formatarNumero(mapeaveis.length) }}</dd>
+            </div>
+            <div>
+              <dt>Mês de referência</dt>
+              <dd>{{ mesReferencia ? formatarMesLongo(mesReferencia) : '—' }}</dd>
+            </div>
+          </dl>
 
-        <div v-else-if="!ocorrencias.length" class="mapa-overlay">
-          <div class="mapa-overlay-card">
-            <EmptyState
-              :titulo="tituloVazio"
-              :descricao="descricaoVazio"
-              icone="bi-geo-alt"
-            >
-              <button
-                v-if="temFiltrosAtivos"
-                type="button"
-                class="btn btn-outline-primary"
-                @click="limparFiltros"
-              >
-                <i class="bi bi-x-circle me-2" aria-hidden="true"></i>
-                Limpar filtros
-              </button>
-              <RouterLink
-                v-else
-                class="btn btn-primary"
-                :to="{ name: 'ocorrencias' }"
-              >
-                <i class="bi bi-list-ul me-2" aria-hidden="true"></i>
-                Ver ocorrências
-              </RouterLink>
-            </EmptyState>
-          </div>
-        </div>
-      </div>
-
-      <div
-        class="card-footer bg-white d-flex flex-wrap align-items-center justify-content-between gap-2"
-      >
-        <span class="small text-secondary">
-          <i class="bi bi-info-circle me-1" aria-hidden="true"></i>
-          Ocorrências sem coordenadas válidas ou fora do território
-          brasileiro não aparecem no mapa.
-        </span>
-
-        <span class="d-flex flex-wrap gap-2">
-          <span
-            v-if="semCoordenadas"
-            class="badge rounded-pill text-bg-warning"
-          >
-            {{ formatarNumero(semCoordenadas) }} sem coordenadas
-          </span>
-          <span
-            v-if="foraDaArea"
-            class="badge rounded-pill text-bg-warning"
-            title="Coordenadas fora dos limites do território brasileiro"
-          >
-            {{ formatarNumero(foraDaArea) }} fora da área de cobertura
-          </span>
-        </span>
-      </div>
+          <p class="contexto-nota">
+            Selecione um ponto no mapa para consultar o contexto do registro.
+          </p>
+        </template>
+      </aside>
     </div>
+
+    <p class="texto-3 small mt-3 mb-0">
+      <i class="bi bi-pin-map me-1" aria-hidden="true"></i>
+      Base cartográfica do OpenStreetMap. A seleção no mapa não altera o
+      registro original.
+    </p>
   </div>
 </template>

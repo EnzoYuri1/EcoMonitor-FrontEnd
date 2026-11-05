@@ -1,52 +1,35 @@
 <script setup>
-import { computed } from 'vue'
-
-import { formatarNumero } from '@/utils/format'
-
-const props = defineProps({
+defineProps({
   titulo: {
     type: String,
     required: true,
   },
   valor: {
     type: [Number, String],
-    default: 0,
+    default: '0',
   },
-  icone: {
+  unidade: {
     type: String,
-    default: 'bi-clipboard-data',
-  },
-  cor: {
-    type: String,
-    default: '#15803D',
+    default: '',
   },
   descricao: {
     type: String,
     default: '',
   },
+  destaque: {
+    type: String,
+    default: '',
+  },
 })
-
-const valorFormatado = computed(() => formatarNumero(props.valor))
 </script>
 
 <template>
-  <div class="card kpi-card h-100">
-    <div class="card-body d-flex align-items-center gap-3">
-      <div
-        class="kpi-icon"
-        :style="{ backgroundColor: `${cor}1A`, color: cor }"
-        aria-hidden="true"
-      >
-        <i class="bi" :class="icone"></i>
-      </div>
-
-      <div class="min-w-0">
-        <p class="kpi-label mb-1">{{ titulo }}</p>
-        <p class="kpi-value mb-0">{{ valorFormatado }}</p>
-        <small v-if="descricao" class="text-secondary">
-          {{ descricao }}
-        </small>
-      </div>
-    </div>
+  <div class="kpi-card" :class="destaque ? `kpi-card-${destaque}` : ''">
+    <p class="kpi-label">{{ titulo }}</p>
+    <p class="kpi-value">
+      <span class="kpi-numero">{{ valor }}</span>
+      <span v-if="unidade" class="kpi-unidade">{{ unidade }}</span>
+    </p>
+    <p v-if="descricao" class="kpi-descricao">{{ descricao }}</p>
   </div>
 </template>

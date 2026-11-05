@@ -13,20 +13,20 @@ const props = defineProps({
 const rotulo = computed(() => rotuloTipo(props.tipo))
 const cor = computed(() => corTipo(props.tipo))
 const icone = computed(() =>
-  props.tipo === 'queimada' ? '🔥' : '🌳',
+  props.tipo === 'queimada' ? 'bi-fire' : 'bi-tree',
 )
 </script>
 
 <template>
   <span
-    class="badge tipo-badge"
+    class="badge eco-badge tipo-badge"
     :style="{
-      backgroundColor: `${cor}14`,
+      '--badge-cor': cor,
       color: cor,
-      borderColor: `${cor}55`,
+      backgroundColor: `${cor}18`,
     }"
   >
-    <span aria-hidden="true">{{ icone }}</span>
+    <i class="bi" :class="icone" aria-hidden="true"></i>
     {{ rotulo }}
   </span>
 </template>

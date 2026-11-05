@@ -23,13 +23,14 @@ const routes = [
     children: [
       {
         path: '',
-        redirect: { name: 'dashboard' },
+        redirect: { name: 'visao-geral' },
       },
       {
-        path: 'dashboard',
-        name: 'dashboard',
+        path: 'visao-geral',
+        alias: 'dashboard',
+        name: 'visao-geral',
         component: () => import('../views/DashboardView.vue'),
-        meta: { title: 'Dashboard' },
+        meta: { title: 'Visão geral' },
       },
       {
         path: 'ocorrencias',
@@ -44,10 +45,16 @@ const routes = [
         meta: { title: 'Nova ocorrência' },
       },
       {
+        path: 'ocorrencias/:id',
+        name: 'ocorrencia-detalhe',
+        component: () => import('../views/OcorrenciaDetalheView.vue'),
+        meta: { title: 'Detalhe da ocorrência' },
+      },
+      {
         path: 'mapa',
         name: 'mapa',
         component: () => import('../views/MapaView.vue'),
-        meta: { title: 'Mapa' },
+        meta: { title: 'Mapa de monitoramento' },
       },
       {
         path: 'relatorios',
@@ -59,7 +66,7 @@ const routes = [
   },
   {
     path: '/:pathMatch(.*)*',
-    redirect: { name: 'dashboard' },
+    redirect: { name: 'visao-geral' },
   },
 ]
 
@@ -90,7 +97,7 @@ router.beforeEach(async (to) => {
   }
 
   if (to.meta.guestOnly && auth.isAuthenticated && auth.user) {
-    return { name: 'dashboard' }
+    return { name: 'visao-geral' }
   }
 
   return true

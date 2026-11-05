@@ -88,7 +88,7 @@ async function entrar() {
     if (destino) {
       router.push(destino)
     } else {
-      router.push({ name: 'dashboard' })
+      router.push({ name: 'visao-geral' })
     }
   } catch (error) {
     if (error?.statusCode === 401) {

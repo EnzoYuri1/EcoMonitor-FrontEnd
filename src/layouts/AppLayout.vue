@@ -9,15 +9,18 @@ import {
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
 
 import SidebarContent from '@/components/SidebarContent.vue'
-import { DOCS_URL } from '@/config'
 import { verificarSaude } from '@/services/api'
+import { useAppStore } from '@/stores/app'
 import { useAuthStore } from '@/stores/auth'
+import { formatarHorario } from '@/utils/format'
 
 const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
+const app = useAppStore()
 
 const menuAberto = ref(false)
+const notificacoesAbertas = ref(false)
 const saude = ref({
   estado: 'verificando',
   mensagem: 'Verificando API...',
@@ -26,7 +29,40 @@ const saude = ref({
 let intervalo = null
 let componenteAtivo = true
 
-const tituloPagina = computed(() => route.meta.title || 'EcoMonitor')
+const migalhas = computed(() => {
+  switch (route.name) {
+    case 'visao-geral':
+      return [{ rotulo: 'Visão geral' }]
+    case 'mapa':
+      return [
+        { rotulo: 'Monitoramento' },
+        { rotulo: 'Mapa de monitoramento' },
+      ]
+    case 'ocorrencias':
+      return [
+        { rotulo: 'Monitoramento' },
+        { rotulo: 'Ocorrências' },
+      ]
+    case 'nova-ocorrencia':
+      return [
+        { rotulo: 'Ocorrências', to: { name: 'ocorrencias' } },
+        { rotulo: 'Nova ocorrência' },
+      ]
+    case 'ocorrencia-detalhe':
+      return [
+        { rotulo: 'Ocorrências', to: { name: 'ocorrencias' } },
+        { rotulo: 'Detalhe' },
+      ]
+    case 'relatorios':
+      return [{ rotulo: 'Análise' }, { rotulo: 'Relatórios' }]
+    default:
+      return [{ rotulo: route.meta.title || 'EcoMonitor' }]
+  }
+})
+
+const horaAtualizacao = computed(() =>
+  formatarHorario(app.ultimaAtualizacao || new Date()),
+)
 
 async function checarSaude() {
   try {
@@ -48,21 +84,35 @@ function sair() {
   router.push({ name: 'login' })
 }
 
+function alternarNotificacoes() {
+  notificacoesAbertas.value = !notificacoesAbertas.value
+}
+
+function fecharNotificacoesFora(evento) {
+  if (!evento.target.closest('.notif-wrap')) {
+    notificacoesAbertas.value = false
+  }
+}
+
 watch(
   () => route.fullPath,
   () => {
     menuAberto.value = false
+    notificacoesAbertas.value = false
   },
 )
 
 onMounted(() => {
+  app.marcarAtualizacao(new Date())
   checarSaude()
   intervalo = window.setInterval(checarSaude, 30000)
+  document.addEventListener('click', fecharNotificacoesFora)
 })
 
 onBeforeUnmount(() => {
   componenteAtivo = false
   if (intervalo) window.clearInterval(intervalo)
+  document.removeEventListener('click', fecharNotificacoesFora)
 })
 </script>
 
@@ -73,66 +123,107 @@ onBeforeUnmount(() => {
     </aside>
 
     <div class="app-main">
-      <header class="topbar px-3 px-lg-4 py-3">
-        <div class="d-flex align-items-center gap-2 min-w-0">
+      <header class="topbar">
+        <div class="topbar-esquerda">
           <button
             type="button"
-            class="btn btn-light d-lg-none"
-            aria-label="Abrir menu"
+            class="icon-btn d-lg-none"
+            aria-label="Abrir menu lateral"
             @click="menuAberto = true"
           >
             <i class="bi bi-list fs-5" aria-hidden="true"></i>
           </button>
 
-          <div class="min-w-0">
-            <p class="topbar-eyebrow mb-0">EcoMonitor</p>
-            <h1 class="h5 mb-0 text-truncate">{{ tituloPagina }}</h1>
-          </div>
+          <nav class="breadcrumbs" aria-label="Você está em">
+            <template
+              v-for="(migalha, indice) in migalhas"
+              :key="`${migalha.rotulo}-${indice}`"
+            >
+              <span v-if="indice > 0" class="breadcrumb-sep" aria-hidden="true">
+                /
+              </span>
+              <RouterLink
+                v-if="migalha.to"
+                :to="migalha.to"
+                class="breadcrumb-link"
+              >
+                {{ migalha.rotulo }}
+              </RouterLink>
+              <span v-else class="breadcrumb-atual">
+                {{ migalha.rotulo }}
+              </span>
+            </template>
+          </nav>
         </div>
 
-        <div class="ms-auto d-flex align-items-center gap-2">
-          <span
-            class="badge rounded-pill api-pill d-inline-flex d-lg-none"
-            :class="`api-pill-${saude.estado}`"
-          >
+        <div class="topbar-meta">
+          <span class="topbar-update">
             <span
-              class="status-dot me-1"
+              class="status-dot"
               :class="`status-${saude.estado}`"
               aria-hidden="true"
             ></span>
-            {{ saude.mensagem }}
+            Atualizado às {{ horaAtualizacao }}
           </span>
 
-          <RouterLink
-            class="btn btn-primary btn-sm d-none d-sm-inline-flex align-items-center"
-            :to="{ name: 'nova-ocorrencia' }"
-          >
-            <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>
-            Nova ocorrência
-          </RouterLink>
+          <span class="topbar-divider" aria-hidden="true"></span>
+
+          <div class="notif-wrap">
+            <button
+              type="button"
+              class="icon-btn"
+              :aria-expanded="notificacoesAbertas"
+              aria-label="Notificações"
+              @click.stop="alternarNotificacoes"
+            >
+              <i class="bi bi-bell" aria-hidden="true"></i>
+              <span v-if="app.naoLidas" class="notif-badge">
+                {{ app.naoLidas }}
+              </span>
+            </button>
+
+            <div
+              v-if="notificacoesAbertas"
+              class="notif-panel"
+              role="dialog"
+              aria-label="Notificações"
+            >
+              <div class="notif-panel-header">
+                <strong>Notificações</strong>
+                <button
+                  v-if="app.naoLidas"
+                  type="button"
+                  class="link-button"
+                  @click="app.marcarTodasComoLidas()"
+                >
+                  Marcar como lidas
+                </button>
+              </div>
+              <ul class="notif-lista">
+                <li
+                  v-for="item in app.notificacoes"
+                  :key="item.id"
+                  class="notif-item"
+                  :class="{ 'notif-item-lida': item.lida }"
+                >
+                  <p class="notif-titulo">{{ item.titulo }}</p>
+                  <p class="notif-descricao">{{ item.descricao }}</p>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <span class="timezone-chip" title="Horário de Brasília">
+            BRT
+          </span>
         </div>
       </header>
 
       <main class="content">
-        <RouterView />
+        <div class="content-inner">
+          <RouterView />
+        </div>
       </main>
-
-      <footer
-        class="app-footer px-3 px-lg-4 py-3 small text-secondary d-flex flex-wrap justify-content-between gap-2"
-      >
-        <span>
-          EcoMonitor · Monitoramento de queimadas e desmatamento
-        </span>
-        <a
-          :href="DOCS_URL"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="text-decoration-none"
-        >
-          Documentação da API
-          <i class="bi bi-box-arrow-up-right ms-1" aria-hidden="true"></i>
-        </a>
-      </footer>
     </div>
 
     <Teleport to="body">
@@ -141,7 +232,7 @@ onBeforeUnmount(() => {
           class="offcanvas-backdrop fade show"
           @click="menuAberto = false"
         ></div>
-        <aside class="eco-offcanvas d-lg-none" aria-label="Menu lateral">
+        <aside class="eco-offcanvas" aria-label="Menu lateral">
           <SidebarContent
             :saude="saude"
             @navigate="menuAberto = false"

@@ -15,6 +15,11 @@ export async function listarOcorrencias(parametros = {}) {
   return data
 }
 
+export async function obterOcorrencia(id) {
+  const { data } = await api.get(`/ocorrencias/${id}`)
+  return data
+}
+
 export async function listarTodasOcorrencias(parametros = {}) {
   const primeira = await listarOcorrencias({
     ...parametros,

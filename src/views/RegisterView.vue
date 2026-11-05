@@ -97,7 +97,7 @@ async function cadastrar() {
 
   try {
     await auth.login(email, form.senha)
-    router.push({ name: 'dashboard', query: { bemvindo: '1' } })
+    router.push({ name: 'visao-geral' })
   } catch {
     router.push({
       name: 'login',
