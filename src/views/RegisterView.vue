@@ -19,6 +19,7 @@ const campos = ref({})
 const erro = ref('')
 const carregando = ref(false)
 const mostrarSenhas = ref(false)
+const aceitouTermos = ref(false)
 
 function limparCampo(campo) {
   if (campos.value[campo]) {
@@ -60,6 +61,10 @@ function validar() {
     erros.confirmarSenha = 'Confirme a senha.'
   } else if (form.confirmarSenha !== form.senha) {
     erros.confirmarSenha = 'As senhas não coincidem.'
+  }
+
+  if (!aceitouTermos.value) {
+    erros.termos = 'Aceite os termos para criar a conta.'
   }
 
   campos.value = erros
@@ -211,6 +216,15 @@ async function cadastrar() {
         />
         <div v-if="campos.confirmarSenha" class="invalid-feedback">
           {{ campos.confirmarSenha }}
+        </div>
+
+        <div class="form-check mb-4">
+          <input id="cadastro-termos" v-model="aceitouTermos" class="form-check-input" type="checkbox" @change="limparCampo('termos')" />
+          <label class="form-check-label" for="cadastro-termos">
+            Li e aceito os <a href="#termos">Termos de uso</a> e a
+            <a href="#privacidade">Política de privacidade</a>.
+          </label>
+          <div v-if="campos.termos" class="invalid-feedback d-block">{{ campos.termos }}</div>
         </div>
       </div>
 

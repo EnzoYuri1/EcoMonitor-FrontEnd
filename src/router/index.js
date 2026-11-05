@@ -5,6 +5,12 @@ import AppLayout from '../layouts/AppLayout.vue'
 
 const routes = [
   {
+    path: '/',
+    name: 'inicio',
+    component: () => import('../views/LandingView.vue'),
+    meta: { title: 'Monitoramento ambiental' },
+  },
+  {
     path: '/login',
     name: 'login',
     component: () => import('../views/LoginView.vue'),
@@ -17,7 +23,7 @@ const routes = [
     meta: { guestOnly: true, title: 'Criar conta' },
   },
   {
-    path: '/',
+    path: '/app',
     component: AppLayout,
     meta: { requiresAuth: true },
     children: [
@@ -65,8 +71,39 @@ const routes = [
     ],
   },
   {
-    path: '/:pathMatch(.*)*',
+    path: '/visao-geral',
     redirect: { name: 'visao-geral' },
+  },
+  {
+    path: '/dashboard',
+    redirect: { name: 'visao-geral' },
+  },
+  {
+    path: '/ocorrencias',
+    redirect: { name: 'ocorrencias' },
+  },
+  {
+    path: '/ocorrencias/nova',
+    redirect: { name: 'nova-ocorrencia' },
+  },
+  {
+    path: '/ocorrencias/:id',
+    redirect: (to) => ({
+      name: 'ocorrencia-detalhe',
+      params: { id: to.params.id },
+    }),
+  },
+  {
+    path: '/mapa',
+    redirect: { name: 'mapa' },
+  },
+  {
+    path: '/relatorios',
+    redirect: { name: 'relatorios' },
+  },
+  {
+    path: '/:pathMatch(.*)*',
+    redirect: { name: 'inicio' },
   },
 ]
 

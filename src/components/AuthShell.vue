@@ -1,5 +1,6 @@
 <script setup>
 import { RouterLink } from 'vue-router'
+import amazonRainforest from '../assets/amazon-rainforest.jpg'
 
 defineProps({
   titulo: {
@@ -16,7 +17,7 @@ defineProps({
 <template>
   <div class="auth-page">
     <section class="auth-hero">
-      <RouterLink class="brand" :to="{ name: 'login' }">
+      <RouterLink class="brand" :to="{ name: 'inicio' }">
         <span class="brand-symbol" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none">
             <circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.4" />
@@ -42,6 +43,15 @@ defineProps({
           por município, tipo e período em uma única base operacional.
         </p>
 
+        <div class="auth-map-illustration" aria-label="Imagem aérea demonstrativa da Amazônia">
+          <img :src="amazonRainforest" alt="Imagem aérea da Amazônia com o rio atravessando a floresta" />
+          <span class="auth-map-title">Amazônia</span>
+          <div class="auth-map-caption">
+            <span><i class="bi bi-tree" aria-hidden="true"></i> Floresta amazônica</span>
+            <small>Imagem demonstrativa</small>
+          </div>
+        </div>
+
         <ul class="auth-features">
           <li>
             <i class="bi bi-check2" aria-hidden="true"></i>
@@ -62,9 +72,6 @@ defineProps({
         </ul>
       </div>
 
-      <p class="auth-hero-footer mb-0">
-        EcoMonitor · Interface conectada à API FastAPI
-      </p>
     </section>
 
     <section class="auth-form-wrap">
@@ -72,7 +79,7 @@ defineProps({
         <div class="card-body">
           <RouterLink
             class="brand d-lg-none mb-4"
-            :to="{ name: 'login' }"
+            :to="{ name: 'inicio' }"
           >
             <span class="brand-symbol" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none">
@@ -93,6 +100,10 @@ defineProps({
           <p v-if="subtitulo" class="texto-2 mb-4">{{ subtitulo }}</p>
 
           <slot />
+          <RouterLink class="auth-back-link" :to="{ name: 'inicio' }">
+            <i class="bi bi-arrow-left" aria-hidden="true"></i>
+            Voltar ao início
+          </RouterLink>
         </div>
       </div>
     </section>

@@ -105,8 +105,8 @@ async function entrar() {
 
 <template>
   <AuthShell
-    titulo="Entrar"
-    subtitulo="Acesse sua conta para registrar e consultar ocorrências ambientais."
+    titulo="Entre na sua conta"
+    subtitulo="Acesse seu espaço de monitoramento ambiental."
   >
     <div
       v-if="mensagemSessao"
