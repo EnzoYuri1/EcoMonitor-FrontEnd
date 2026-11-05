@@ -5,8 +5,7 @@ ocorrências de queimadas e desmatamento. O projeto consome exclusivamente a
 API real do backend FastAPI, sem dados fictícios, mocks ou arquivos CSV de
 exemplo.
 
-Esta é a versão em **Vue 3 + Vite + Bootstrap 5**. O frontend Streamlit
-original foi preservado em `C:\Users\desenvolvimento4\EcoMonitor-Frontend`.
+Frontend em **Vue 3 + Vite + Bootstrap 5** para o EcoMonitor.
 
 ## Stack
 
