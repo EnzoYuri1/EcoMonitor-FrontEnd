@@ -195,7 +195,7 @@ Ao servir o `dist/` em produção, configure o servidor estático para devolver
   - municípios monitorados.
 - Gráfico de rosca por tipo.
 - Gráfico de barras com os 10 municípios com mais ocorrências.
-- Evolução mensal com até 2.000 registros (20 páginas de 100).
+- Evolução mensal calculada sobre todas as ocorrências cadastradas.
 - Estado vazio quando o banco não possui ocorrências.
 - Listagem paginada com filtros server-side por:
   - tipo;

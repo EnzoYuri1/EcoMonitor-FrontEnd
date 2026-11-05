@@ -18,12 +18,8 @@ import { Bar, Doughnut, Line } from 'vue-chartjs'
 
 import EmptyState from '@/components/EmptyState.vue'
 import KpiCard from '@/components/KpiCard.vue'
-import { listarOcorrencias } from '@/services/ocorrencias'
+import { listarTodasOcorrencias } from '@/services/ocorrencias'
 import { obterEstatisticas } from '@/services/stats'
-import {
-  MAX_PAGINAS_EVOLUCAO,
-  TAMANHO_PAGINA_EVOLUCAO,
-} from '@/utils/constants'
 import {
   corTipo,
   formatarMes,
@@ -52,7 +48,6 @@ const stats = ref(null)
 
 const carregandoEvolucao = ref(false)
 const erroEvolucao = ref('')
-const avisoEvolucao = ref('')
 const evolucao = ref({ labels: [], valores: [] })
 
 const bemvindo = ref(route.query.bemvindo === '1')
@@ -238,49 +233,11 @@ function agruparPorMes(itens) {
 async function carregarEvolucao() {
   carregandoEvolucao.value = true
   erroEvolucao.value = ''
-  avisoEvolucao.value = ''
   evolucao.value = { labels: [], valores: [] }
 
   try {
-    const primeira = await listarOcorrencias({
-      page: 1,
-      page_size: TAMANHO_PAGINA_EVOLUCAO,
-    })
-
-    const itens = [...primeira.items]
-    const totalPaginas = Math.min(
-      primeira.pages || 1,
-      MAX_PAGINAS_EVOLUCAO,
-    )
-
-    if (totalPaginas > 1) {
-      const numeros = Array.from(
-        { length: totalPaginas - 1 },
-        (_, indice) => indice + 2,
-      )
-
-      const respostas = await Promise.all(
-        numeros.map((page) =>
-          listarOcorrencias({
-            page,
-            page_size: TAMANHO_PAGINA_EVOLUCAO,
-          }),
-        ),
-      )
-
-      respostas.forEach((resposta) => itens.push(...resposta.items))
-    }
-
-    if (primeira.total > itens.length) {
-      avisoEvolucao.value =
-        `A evolução mensal considera os ${formatarNumero(
-          itens.length,
-        )} registros mais recentes de ${formatarNumero(
-          primeira.total,
-        )}.`
-    }
-
-    evolucao.value = agruparPorMes(itens)
+    const resultado = await listarTodasOcorrencias()
+    evolucao.value = agruparPorMes(resultado.items || [])
   } catch (error) {
     erroEvolucao.value =
       error?.message ||
@@ -504,15 +461,6 @@ onMounted(() => {
             </button>
           </div>
           <div class="card-body">
-            <div
-              v-if="avisoEvolucao"
-              class="alert alert-info small py-2"
-              role="status"
-            >
-              <i class="bi bi-info-circle me-1" aria-hidden="true"></i>
-              {{ avisoEvolucao }}
-            </div>
-
             <div
               v-if="erroEvolucao"
               class="alert alert-warning d-flex flex-wrap align-items-center gap-2 mb-0"
