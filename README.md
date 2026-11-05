@@ -17,6 +17,7 @@ original foi preservado em `C:\Users\desenvolvimento4\EcoMonitor-Frontend`.
 - Axios
 - Bootstrap 5 e Bootstrap Icons
 - Chart.js com `vue-chartjs`
+- Leaflet com tiles do OpenStreetMap
 - Vitest e `@vue/test-utils` para testes
 
 ## Requisitos
@@ -66,6 +67,7 @@ EcoMonitor-Frontend-Vue/
 │   ├── utils/
 │   │   ├── constants.js
 │   │   ├── format.js
+│   │   ├── map.js
 │   │   └── storage.js
 │   └── views/
 │       ├── DashboardView.vue
@@ -77,7 +79,9 @@ EcoMonitor-Frontend-Vue/
 │       └── RelatoriosView.vue
 └── tests/
     ├── api.spec.js
-    └── format.spec.js
+    ├── auth.spec.js
+    ├── format.spec.js
+    └── map.spec.js
 ```
 
 ## Instalação
@@ -205,8 +209,19 @@ Ao servir o `dist/` em produção, configure o servidor estático para devolver
   - data máxima igual a hoje;
   - coordenadas opcionais;
   - sugestões de municípios já cadastrados.
+- Mapa interativo com Leaflet e tiles do OpenStreetMap:
+  - filtros server-side por tipo, município e período;
+  - marcadores coloridos por tipo (laranja para queimada e verde para
+    desmatamento);
+  - popups com tipo, município/UF, data, coordenadas e descrição;
+  - legenda com contagem por tipo;
+  - ajuste automático aos marcadores e botão para centralizar no Brasil;
+  - carregamento de todas as páginas da API;
+  - estados de carregamento, vazio e API offline;
+  - ocorrências sem coordenadas ou fora do território brasileiro são
+    contabilizadas no rodapé e não aparecem no mapa.
 - Indicador de saúde da API no menu, consultando `/health`.
-- Placeholders de Mapa e Relatórios, mantendo o menu da versão Streamlit.
+- Placeholder de Relatórios, mantendo o menu da versão Streamlit.
 - Layout responsivo: sidebar fixa no desktop e menu lateral no mobile.
 - Identidade visual verde, branco e verde-escuro.
 
@@ -219,7 +234,7 @@ Ao servir o `dist/` em produção, configure o servidor estático para devolver
 | `/dashboard` | Dashboard | Autenticada |
 | `/ocorrencias` | Listagem e filtros | Autenticada |
 | `/ocorrencias/nova` | Nova ocorrência | Autenticada |
-| `/mapa` | Placeholder de mapa | Autenticada |
+| `/mapa` | Mapa interativo das ocorrências | Autenticada |
 | `/relatorios` | Placeholder de relatórios | Autenticada |
 
 A rota `/` redireciona para `/dashboard`. Rotas inexistentes também são
@@ -285,6 +300,8 @@ Os testes não dependem do backend rodando:
   `409`, `422`, timeout e erro de conexão com adaptador Axios simulado.
 - `tests/auth.spec.js` valida hydrate, login, expiração, `ensureSession`,
   logout e mensagem de sessão.
+- `tests/map.spec.js` valida coordenadas, limites, contagem por tipo, escape
+  de HTML e conteúdo dos popups.
 
 O build de produção é gerado em `dist/`.
 
@@ -330,13 +347,19 @@ Ele pode continuar sendo usado como comparação ou fallback.
 12. Exclua uma ocorrência e confirme a remoção da lista.
 13. Entre com outro usuário e confirme que as ações de edição/exclusão não
     aparecem para ocorrências de terceiros.
-14. Pare o backend e confirme as mensagens de API offline.
-15. Reinicie o backend, faça login e confirme que o indicador de saúde fica
+14. Acesse `/mapa` e confirme os marcadores, a legenda e o total exibido.
+15. Filtre o mapa por tipo, município e período.
+16. Use os botões "Ajustar" e "Brasil" e confira o enquadramento.
+17. Abra o popup de um marcador e confira tipo, local, data e coordenadas.
+18. Confirme a contagem de ocorrências sem coordenadas ou fora da área de
+    cobertura no rodapé do mapa.
+19. Pare o backend e confirme as mensagens de API offline.
+20. Reinicie o backend, faça login e confirme que o indicador de saúde fica
     verde.
-16. Reduza `ACCESS_TOKEN_EXPIRE_MINUTES` no backend, aguarde a expiração e
+21. Reduza `ACCESS_TOKEN_EXPIRE_MINUTES` no backend, aguarde a expiração e
     confirme o retorno ao login.
-17. Abra o menu mobile e teste a navegação.
-18. Confirme que o link de documentação abre `http://127.0.0.1:8000/docs`.
+22. Abra o menu mobile e teste a navegação.
+23. Confirme que o link de documentação abre `http://127.0.0.1:8000/docs`.
 
 ## Solução de problemas
 
@@ -350,5 +373,10 @@ Ele pode continuar sendo usado como comparação ou fallback.
   novamente.
 - **Filtro de município sem resultados**: a API é sensível a acentos; use a
   opção preenchida pelo select de `/stats`.
+- **Mapa sem tiles**: o Leaflet usa os tiles públicos do OpenStreetMap;
+  verifique a conexão com a internet.
+- **Marcador ausente no mapa**: confira latitude e longitude. Pontos vazios,
+  inválidos ou fora do território brasileiro são contabilizados no rodapé e
+  não são plotados.
 - **Datas**: o frontend envia e recebe datas no formato `AAAA-MM-DD` e exibe
   no formato `dd/mm/aaaa`.
