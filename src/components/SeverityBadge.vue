@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 
+import { Badge } from '@/components/ui/badge'
 import { corSeveridade, rotuloSeveridade } from '@/utils/format'
 
 const props = defineProps({
@@ -19,8 +20,9 @@ const cor = computed(() => corSeveridade(props.severidade))
 </script>
 
 <template>
-  <span
-    class="badge eco-badge severity-badge"
+  <Badge
+    variant="outline"
+    class="eco-badge severity-badge"
     :style="{
       color: cor,
       backgroundColor: `${cor}18`,
@@ -32,5 +34,5 @@ const cor = computed(() => corSeveridade(props.severidade))
       <span></span>
     </span>
     <span v-if="comRotulo">{{ rotulo }}</span>
-  </span>
+  </Badge>
 </template>

@@ -17,6 +17,7 @@ Frontend em **Vue 3 + Vite + Bootstrap 5** para o EcoMonitor.
 - Pinia
 - Axios
 - Bootstrap 5 e Bootstrap Icons
+- shadcn-vue (componentes locais com Reka UI, Tailwind CSS e Lucide)
 - Chart.js com `vue-chartjs`
 - Leaflet com tiles do OpenStreetMap
 - Vitest e `@vue/test-utils` para testes
@@ -38,15 +39,18 @@ EcoMonitor-Frontend-Vue/
 ├── .gitignore
 ├── README.md
 ├── public/
+│   ├── evidence-amazonia.jpg
+│   ├── hero-amazonia.jpg
+│   ├── logo-ecomonitor-original.png
 │   └── favicon.svg
 ├── src/
 │   ├── main.js
 │   ├── App.vue
 │   ├── config.js
 │   ├── assets/
-│   │   ├── amazon-rainforest.jpg
-│   │   └── styles.css
+│   │   ├── styles.css
 │   ├── components/
+│   │   ├── AssistenteChat.vue
 │   │   ├── AuthShell.vue
 │   │   ├── BaseModal.vue
 │   │   ├── ConfirmDialog.vue
@@ -61,12 +65,14 @@ EcoMonitor-Frontend-Vue/
 │   │   └── index.js
 │   ├── services/
 │   │   ├── api.js
+│   │   ├── assistente.js
 │   │   ├── auth.js
 │   │   ├── ocorrencias.js
 │   │   └── stats.js
 │   ├── stores/
 │   │   └── auth.js
 │   ├── utils/
+│   │   ├── assistente.js
 │   │   ├── constants.js
 │   │   ├── format.js
 │   │   ├── map.js
@@ -83,6 +89,7 @@ EcoMonitor-Frontend-Vue/
 │       └── RelatoriosView.vue
 └── tests/
     ├── api.spec.js
+    ├── assistente.spec.js
     ├── auth.spec.js
     ├── format.spec.js
     ├── map.spec.js
@@ -189,19 +196,17 @@ Ao servir o `dist/` em produção, configure o servidor estático para devolver
 - Landing page pública em `/`, sem sidebar da área autenticada.
 - Cabeçalho com navegação para funcionalidades e fluxo de uso, além das ações
   de login e criação de conta.
-- Prévia demonstrativa de pressão no território com imagem aérea da Amazônia,
-  indicadores, legenda e ocorrência selecionada.
-- Seção de registros e evidências com imagens locais demonstrativas.
-- Login e cadastro compartilham o `AuthShell.vue` e exibem a Amazônia no painel
-  institucional, com composição responsiva.
-- Tema escuro claro, superfícies verdes, controles simples e foco visível.
+- Hero e seção de registros com imagens da Amazônia em composição responsiva.
+- Login e cadastro compartilham o `AuthShell.vue` com composição responsiva.
+- Tema escuro em preto e cinza, com superfícies grafite, bordas discretas,
+  componentes shadcn como padrão e foco neutro visível.
+- Componentes shadcn-vue são usados para botões, cards, formulários, badges,
+  modais, navegação e estados interativos. Bootstrap foi removido.
 - As informações da landing, como `128` ocorrências e `3.842 ha`, são
   ilustrativas e não representam dados retornados pela API.
 
-A imagem `src/assets/amazon-rainforest.jpg` é uma fotografia aérea do rio
-Amazonas na floresta amazônica, disponibilizada no Wikimedia Commons com
-origem NASA e licença de domínio público:
-[File:Amazon 57.53278W 2.71207S.jpg](https://commons.wikimedia.org/wiki/File:Amazon_57.53278W_2.71207S.jpg).
+As imagens públicas da Amazônia usadas na landing ficam em `public/hero-amazonia.jpg`
+e `public/evidence-amazonia.jpg`.
 
 ## Funcionalidades da área autenticada
 
@@ -235,8 +240,7 @@ origem NASA e licença de domínio público:
   - sugestões de municípios já cadastrados.
 - Mapa interativo com Leaflet e tiles do OpenStreetMap:
   - filtros server-side por tipo, município e período;
-  - marcadores coloridos por tipo (laranja para queimada e verde para
-    desmatamento);
+  - marcadores diferenciados por tipo, mantendo a semântica visual do mapa;
   - popups com tipo, município/UF, data, coordenadas e descrição;
   - legenda com contagem por tipo;
   - ajuste automático aos marcadores e botão para centralizar no Brasil;
@@ -255,8 +259,19 @@ origem NASA e licença de domínio público:
   - exportação CSV detalhada das ocorrências e resumo por município;
   - estados de carregamento, vazio, validação do período e API offline.
 - Indicador de saúde da API no menu, consultando `/health`.
+- Assistente de IA gratuito via OpenRouter (botão flutuante em todas as telas
+  autenticadas):
+  - painel de chat com sugestões de perguntas, indicador de digitação e
+    mensagens de erro amigáveis;
+  - histórico em `sessionStorage` (some ao fechar a aba) e botão para limpar
+    a conversa;
+  - mensagens de até 1.000 caracteres com contador;
+  - timeout próprio de 45 segundos para a resposta da IA;
+  - aviso permanente de que o assistente pode cometer erros e apenas orienta,
+    sem alterar dados nem substituir avaliação técnica/legal.
 - Layout responsivo: sidebar fixa no desktop e menu lateral no mobile.
-- Identidade visual verde, branco e verde-escuro.
+- Identidade visual em preto, grafite e cinza, com verde pontual nos botões
+  primários e estados positivos, baseada no tema escuro do shadcn-vue.
 
 ## Rotas
 
@@ -315,6 +330,7 @@ técnicos crus para o usuário.
 - `GET /api/v1/ocorrencias/{id}`
 - `PATCH /api/v1/ocorrencias/{id}`
 - `DELETE /api/v1/ocorrencias/{id}`
+- `POST /api/v1/assistente`
 - `GET /health` (fora de `/api/v1`)
 
 O frontend não envia `created_by` no corpo: o backend define o responsável a
@@ -339,6 +355,10 @@ Os testes não dependem do backend rodando:
   de HTML e conteúdo dos popups.
 - `tests/reports.spec.js` valida resumo, agrupamento por município, evolução
   mensal, descrição do período, percentuais e geração dos CSVs.
+- `tests/assistente.spec.js` valida o envio com histórico filtrado e limitado,
+  o `timeout` próprio, a propagação de erros amigáveis e o histórico em
+  `sessionStorage` (salvar, carregar, limitar a 24, ignorar corrompido e
+  limpar).
 
 O build de produção é gerado em `dist/`.
 
@@ -402,7 +422,7 @@ Ele pode continuar sendo usado como comparação ou fallback.
 23. Aplique um período sem ocorrências e confirme o estado vazio.
 24. Pare o backend e confirme as mensagens de API offline.
 25. Reinicie o backend, faça login e confirme que o indicador de saúde fica
-    verde.
+    cinza.
 26. Reduza `ACCESS_TOKEN_EXPIRE_MINUTES` no backend, aguarde a expiração e
     confirme o retorno ao login.
 27. Abra o menu mobile e teste a navegação.

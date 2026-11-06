@@ -1,5 +1,9 @@
 <script setup>
 import { onBeforeUnmount, watch } from 'vue'
+import { X } from 'lucide-vue-next'
+
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
 
 const props = defineProps({
   modelValue: {
@@ -64,15 +68,19 @@ onBeforeUnmount(() => ativarScrollLock(false))
           class="modal-dialog modal-dialog-centered modal-dialog-scrollable"
           :class="`modal-${size}`"
         >
-          <div class="modal-content">
+          <Card class="modal-content">
             <div class="modal-header">
               <h2 class="modal-title fs-5">{{ title }}</h2>
-              <button
+              <Button
                 type="button"
-                class="btn-close"
+                variant="ghost"
+                size="icon"
+                class="modal-close"
                 aria-label="Fechar"
                 @click="fechar"
-              ></button>
+              >
+                <X :size="18" aria-hidden="true" />
+              </Button>
             </div>
 
             <div class="modal-body">
@@ -82,7 +90,7 @@ onBeforeUnmount(() => ativarScrollLock(false))
             <div v-if="$slots.footer" class="modal-footer">
               <slot name="footer" />
             </div>
-          </div>
+          </Card>
         </div>
       </div>
 

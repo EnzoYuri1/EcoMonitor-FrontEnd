@@ -1,8 +1,12 @@
 <script setup>
 import { reactive, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
+import { Eye, EyeOff, UserPlus, TriangleAlert } from 'lucide-vue-next'
 
 import AuthShell from '@/components/AuthShell.vue'
+import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Input } from '@/components/ui/input'
 import { useAuthStore } from '@/stores/auth'
 
 const auth = useAuthStore()
@@ -124,14 +128,14 @@ async function cadastrar() {
       class="alert alert-danger d-flex align-items-start gap-2 mensagem-erro"
       role="alert"
     >
-      <i class="bi bi-exclamation-triangle mt-1" aria-hidden="true"></i>
+      <TriangleAlert :size="16" class="mt-1" aria-hidden="true" />
       <span>{{ erro }}</span>
     </div>
 
     <form novalidate @submit.prevent="cadastrar">
       <div class="mb-3">
         <label for="cadastro-nome" class="form-label">Nome</label>
-        <input
+        <Input
           id="cadastro-nome"
           v-model="form.nome"
           type="text"
@@ -148,7 +152,7 @@ async function cadastrar() {
 
       <div class="mb-3">
         <label for="cadastro-email" class="form-label">Email</label>
-        <input
+        <Input
           id="cadastro-email"
           v-model="form.email"
           type="email"
@@ -167,7 +171,7 @@ async function cadastrar() {
       <div class="mb-3">
         <label for="cadastro-senha" class="form-label">Senha</label>
         <div class="input-group input-group-lg has-validation">
-          <input
+          <Input
             id="cadastro-senha"
             v-model="form.senha"
             :type="mostrarSenhas ? 'text' : 'password'"
@@ -177,20 +181,18 @@ async function cadastrar() {
             placeholder="Mínimo de 8 caracteres"
             @input="limparCampo('senha')"
           />
-          <button
+          <Button
             type="button"
-            class="btn btn-outline-secondary"
+            variant="outline"
+            size="icon"
             :aria-label="
               mostrarSenhas ? 'Ocultar senhas' : 'Mostrar senhas'
             "
             @click="mostrarSenhas = !mostrarSenhas"
           >
-            <i
-              class="bi"
-              :class="mostrarSenhas ? 'bi-eye-slash' : 'bi-eye'"
-              aria-hidden="true"
-            ></i>
-          </button>
+            <EyeOff v-if="mostrarSenhas" :size="17" aria-hidden="true" />
+            <Eye v-else :size="17" aria-hidden="true" />
+          </Button>
           <div v-if="campos.senha" class="invalid-feedback">
             {{ campos.senha }}
           </div>
@@ -204,7 +206,7 @@ async function cadastrar() {
         <label for="cadastro-confirmar" class="form-label">
           Confirmar senha
         </label>
-        <input
+        <Input
           id="cadastro-confirmar"
           v-model="form.confirmarSenha"
           :type="mostrarSenhas ? 'text' : 'password'"
@@ -219,7 +221,12 @@ async function cadastrar() {
         </div>
 
         <div class="form-check mb-4">
-          <input id="cadastro-termos" v-model="aceitouTermos" class="form-check-input" type="checkbox" @change="limparCampo('termos')" />
+          <Checkbox
+            id="cadastro-termos"
+            v-model="aceitouTermos"
+            :aria-invalid="Boolean(campos.termos)"
+            @click="limparCampo('termos')"
+          />
           <label class="form-check-label" for="cadastro-termos">
             Li e aceito os <a href="#termos">Termos de uso</a> e a
             <a href="#privacidade">Política de privacidade</a>.
@@ -228,19 +235,15 @@ async function cadastrar() {
         </div>
       </div>
 
-      <button
+      <Button
         type="submit"
-        class="btn btn-primary btn-lg w-100"
+        size="lg"
+        class="w-100"
         :disabled="carregando"
       >
-        <span
-          v-if="carregando"
-          class="spinner-border spinner-border-sm me-2"
-          aria-hidden="true"
-        ></span>
-        <i v-else class="bi bi-person-plus me-2" aria-hidden="true"></i>
+        <UserPlus v-if="!carregando" :size="17" aria-hidden="true" />
         {{ carregando ? 'Criando conta...' : 'Criar conta' }}
-      </button>
+      </Button>
     </form>
 
     <p class="text-center text-secondary mt-4 mb-0">

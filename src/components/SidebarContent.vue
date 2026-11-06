@@ -1,21 +1,31 @@
 <script setup>
 import { computed } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
+import {
+  ExternalLink,
+  FileChartColumn,
+  Grid2X2,
+  Info,
+  ListChecks,
+  LogOut,
+  MapPin,
+  LifeBuoy,
+  PanelLeftClose,
+  PanelLeftOpen,
+} from 'lucide-vue-next'
 
 import { DOCS_URL } from '@/config'
+import { Button } from '@/components/ui/button'
 import { useAuthStore } from '@/stores/auth'
 
 defineProps({
-  saude: {
-    type: Object,
-    default: () => ({
-      estado: 'verificando',
-      mensagem: 'Verificando API...',
-    }),
+  recolhida: {
+    type: Boolean,
+    default: false,
   },
 })
 
-defineEmits(['navigate', 'sair'])
+defineEmits(['navigate', 'sair', 'alternar'])
 
 const route = useRoute()
 const auth = useAuthStore()
@@ -24,22 +34,22 @@ const links = [
   {
     nome: 'visao-geral',
     rotulo: 'Visão geral',
-    icone: 'bi-grid-1x2',
+    icone: Grid2X2,
   },
   {
     nome: 'mapa',
     rotulo: 'Mapa de monitoramento',
-    icone: 'bi-geo-alt',
+    icone: MapPin,
   },
   {
     nome: 'ocorrencias',
     rotulo: 'Ocorrências',
-    icone: 'bi-list-check',
+    icone: ListChecks,
   },
   {
     nome: 'relatorios',
     rotulo: 'Relatórios',
-    icone: 'bi-file-earmark-bar-graph',
+    icone: FileChartColumn,
   },
 ]
 
@@ -71,31 +81,34 @@ function ehAtivo(link) {
 </script>
 
 <template>
-  <div class="sidebar-content">
-    <RouterLink
-      class="brand"
-      :to="{ name: 'visao-geral' }"
-      @click="$emit('navigate')"
-    >
-      <span class="brand-symbol" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none">
-          <circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.4" />
-          <path
-            d="M3.5 12h3.2l1.8-4.4 2.6 8.8 2.2-4.4h3.2"
-            stroke="currentColor"
-            stroke-width="1.5"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          />
-        </svg>
-      </span>
-      <span class="brand-name">EcoMonitor</span>
-    </RouterLink>
+  <div class="sidebar-content" :class="{ 'sidebar-content-recolhida': recolhida }">
+    <div class="sidebar-brand-row">
+      <RouterLink
+        class="brand"
+        :to="{ name: 'visao-geral' }"
+        @click="$emit('navigate')"
+      >
+        <img class="brand-logo" src="/logo-ecomonitor-original.png" alt="" aria-hidden="true" />
+        <span class="brand-name">EcoMonitor</span>
+      </RouterLink>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon-sm"
+        class="sidebar-toggle"
+        :aria-label="recolhida ? 'Expandir menu lateral' : 'Recolher menu lateral'"
+        :title="recolhida ? 'Expandir menu lateral' : 'Recolher menu lateral'"
+        @click.prevent="$emit('alternar')"
+      >
+        <PanelLeftOpen v-if="recolhida" :size="16" aria-hidden="true" />
+        <PanelLeftClose v-else :size="16" aria-hidden="true" />
+      </Button>
+    </div>
 
     <div class="workspace">
       <p class="sidebar-label">Área de trabalho</p>
       <div class="workspace-value">
-        <i class="bi bi-grid-1x2" aria-hidden="true"></i>
+        <Grid2X2 :size="14" aria-hidden="true" />
         <span>Observatório ambiental</span>
       </div>
     </div>
@@ -112,16 +125,16 @@ function ehAtivo(link) {
         :aria-current="ehAtivo(link) ? 'page' : undefined"
         @click="$emit('navigate')"
       >
-        <i class="bi" :class="link.icone" aria-hidden="true"></i>
-        <span>{{ link.rotulo }}</span>
+        <component :is="link.icone" :size="17" aria-hidden="true" />
+        <span class="sidebar-link-label">{{ link.rotulo }}</span>
       </RouterLink>
     </nav>
 
     <div class="sidebar-bottom">
       <div class="demo-card">
         <p class="demo-card-title">
-          <i class="bi bi-info-circle" aria-hidden="true"></i>
-          Ambiente demonstrativo
+          <Info :size="14" aria-hidden="true" />
+          <span class="sidebar-link-label">Ambiente demonstrativo</span>
         </p>
         <p class="demo-card-text">
           Dados fictícios para análise. Sem vínculo com fontes reais.
@@ -134,9 +147,9 @@ function ehAtivo(link) {
         target="_blank"
         rel="noopener noreferrer"
       >
-        <i class="bi bi-life-preserver" aria-hidden="true"></i>
-        <span>Central de ajuda</span>
-        <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i>
+        <LifeBuoy :size="15" aria-hidden="true" />
+        <span class="sidebar-link-label">Central de ajuda</span>
+        <ExternalLink :size="13" aria-hidden="true" />
       </a>
 
       <div class="sidebar-profile">
@@ -145,25 +158,19 @@ function ehAtivo(link) {
           <p class="sidebar-profile-nome">{{ nomeExibicao }}</p>
           <small class="sidebar-profile-cargo">Analista ambiental</small>
         </div>
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="icon-sm"
           class="sidebar-profile-sair"
           aria-label="Sair da conta"
           title="Sair da conta"
           @click="$emit('sair')"
         >
-          <i class="bi bi-box-arrow-right" aria-hidden="true"></i>
-        </button>
+          <LogOut :size="15" aria-hidden="true" />
+        </Button>
       </div>
 
-      <p class="sidebar-health" :title="saude.mensagem">
-        <span
-          class="status-dot"
-          :class="`status-${saude.estado}`"
-          aria-hidden="true"
-        ></span>
-        {{ saude.mensagem }}
-      </p>
     </div>
   </div>
 </template>

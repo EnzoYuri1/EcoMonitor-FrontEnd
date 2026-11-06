@@ -7,12 +7,14 @@ import {
   watch,
 } from 'vue'
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
+import { Bell, Menu } from 'lucide-vue-next'
 
 import SidebarContent from '@/components/SidebarContent.vue'
-import { verificarSaude } from '@/services/api'
+import AssistenteChat from '@/components/AssistenteChat.vue'
+import { Button } from '@/components/ui/button'
+import { Sheet } from '@/components/ui/sheet'
 import { useAppStore } from '@/stores/app'
 import { useAuthStore } from '@/stores/auth'
-import { formatarHorario } from '@/utils/format'
 
 const route = useRoute()
 const router = useRouter()
@@ -20,14 +22,8 @@ const auth = useAuthStore()
 const app = useAppStore()
 
 const menuAberto = ref(false)
+const sidebarRecolhida = ref(false)
 const notificacoesAbertas = ref(false)
-const saude = ref({
-  estado: 'verificando',
-  mensagem: 'Verificando API...',
-})
-
-let intervalo = null
-let componenteAtivo = true
 
 const migalhas = computed(() => {
   switch (route.name) {
@@ -60,24 +56,6 @@ const migalhas = computed(() => {
   }
 })
 
-const horaAtualizacao = computed(() =>
-  formatarHorario(app.ultimaAtualizacao || new Date()),
-)
-
-async function checarSaude() {
-  try {
-    const ok = await verificarSaude()
-    if (!componenteAtivo) return
-
-    saude.value = ok
-      ? { estado: 'online', mensagem: 'API online' }
-      : { estado: 'offline', mensagem: 'API indisponível' }
-  } catch {
-    if (!componenteAtivo) return
-    saude.value = { estado: 'offline', mensagem: 'API offline' }
-  }
-}
-
 function sair() {
   menuAberto.value = false
   auth.logout()
@@ -102,37 +80,43 @@ watch(
   },
 )
 
+app.marcarAtualizacao(new Date())
+
 onMounted(() => {
-  app.marcarAtualizacao(new Date())
-  checarSaude()
-  intervalo = window.setInterval(checarSaude, 30000)
   document.addEventListener('click', fecharNotificacoesFora)
 })
 
 onBeforeUnmount(() => {
-  componenteAtivo = false
-  if (intervalo) window.clearInterval(intervalo)
   document.removeEventListener('click', fecharNotificacoesFora)
 })
 </script>
 
 <template>
   <div class="app-shell">
-    <aside class="sidebar d-none d-lg-flex flex-column">
-      <SidebarContent :saude="saude" @sair="sair" />
+    <aside
+      class="sidebar d-none d-lg-flex flex-column"
+      :class="{ 'sidebar-recolhida': sidebarRecolhida }"
+    >
+      <SidebarContent
+        :recolhida="sidebarRecolhida"
+        @alternar="sidebarRecolhida = !sidebarRecolhida"
+        @sair="sair"
+      />
     </aside>
 
     <div class="app-main">
       <header class="topbar">
         <div class="topbar-esquerda">
-          <button
+          <Button
             type="button"
-            class="icon-btn d-lg-none"
+            variant="ghost"
+            size="icon"
+            class="icon-btn mobile-menu-button"
             aria-label="Abrir menu lateral"
             @click="menuAberto = true"
           >
-            <i class="bi bi-list fs-5" aria-hidden="true"></i>
-          </button>
+            <Menu :size="19" aria-hidden="true" />
+          </Button>
 
           <nav class="breadcrumbs" aria-label="Você está em">
             <template
@@ -157,30 +141,21 @@ onBeforeUnmount(() => {
         </div>
 
         <div class="topbar-meta">
-          <span class="topbar-update">
-            <span
-              class="status-dot"
-              :class="`status-${saude.estado}`"
-              aria-hidden="true"
-            ></span>
-            Atualizado às {{ horaAtualizacao }}
-          </span>
-
-          <span class="topbar-divider" aria-hidden="true"></span>
-
           <div class="notif-wrap">
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="icon"
               class="icon-btn"
               :aria-expanded="notificacoesAbertas"
               aria-label="Notificações"
               @click.stop="alternarNotificacoes"
             >
-              <i class="bi bi-bell" aria-hidden="true"></i>
+              <Bell :size="17" aria-hidden="true" />
               <span v-if="app.naoLidas" class="notif-badge">
                 {{ app.naoLidas }}
               </span>
-            </button>
+            </Button>
 
             <div
               v-if="notificacoesAbertas"
@@ -226,20 +201,13 @@ onBeforeUnmount(() => {
       </main>
     </div>
 
-    <Teleport to="body">
-      <template v-if="menuAberto">
-        <div
-          class="offcanvas-backdrop fade show"
-          @click="menuAberto = false"
-        ></div>
-        <aside class="eco-offcanvas" aria-label="Menu lateral">
-          <SidebarContent
-            :saude="saude"
-            @navigate="menuAberto = false"
-            @sair="sair"
-          />
-        </aside>
-      </template>
-    </Teleport>
+    <Sheet v-model:open="menuAberto" side="left">
+      <SidebarContent
+        @navigate="menuAberto = false"
+        @sair="sair"
+      />
+    </Sheet>
+
+    <AssistenteChat />
   </div>
 </template>

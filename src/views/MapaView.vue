@@ -465,7 +465,7 @@ onBeforeUnmount(() => {
         </div>
       </div>
 
-      <div class="d-flex gap-2">
+      <div class="filter-actions d-flex gap-2">
         <button type="submit" class="btn btn-primary">
           <i class="bi bi-funnel me-1" aria-hidden="true"></i>
           Aplicar

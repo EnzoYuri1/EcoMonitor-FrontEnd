@@ -15,9 +15,9 @@ import '@fontsource/manrope/500.css'
 import '@fontsource/manrope/600.css'
 import '@fontsource/manrope/700.css'
 import '@fontsource/manrope/800.css'
-import 'bootstrap/dist/css/bootstrap.min.css'
-import 'bootstrap-icons/font/bootstrap-icons.css'
 import './assets/styles.css'
+import './assets/tailwind.css'
+import 'bootstrap-icons/font/bootstrap-icons.css'
 
 Chart.register(...registerables)
 

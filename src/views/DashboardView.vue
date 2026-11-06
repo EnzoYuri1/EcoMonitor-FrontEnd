@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
 
 import {
   BarElement,
@@ -11,11 +11,21 @@ import {
   Tooltip,
 } from 'chart.js'
 import { Bar } from 'vue-chartjs'
+import {
+  ArrowRight,
+  ArrowUpRight,
+  Info,
+  Plus,
+  RefreshCw,
+  WifiOff,
+} from 'lucide-vue-next'
 
 import EmptyState from '@/components/EmptyState.vue'
 import KpiCard from '@/components/KpiCard.vue'
 import MiniMapa from '@/components/MiniMapa.vue'
 import PageHeader from '@/components/PageHeader.vue'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
 import SeverityBadge from '@/components/SeverityBadge.vue'
 import StatusBadge from '@/components/StatusBadge.vue'
 import TipoBadge from '@/components/TipoBadge.vue'
@@ -48,6 +58,7 @@ ChartJS.register(
 )
 
 const auth = useAuthStore()
+const router = useRouter()
 const demo = useDemoStore()
 const app = useAppStore()
 
@@ -196,33 +207,28 @@ onMounted(carregar)
       descricao="Panorama consolidado das ocorrências de queimadas e desmatamento registradas no EcoMonitor."
     >
       <template #acoes>
-        <button
+        <Button
           type="button"
-          class="btn btn-outline-secondary"
+          variant="outline"
           :disabled="carregando"
           @click="carregar"
         >
-          <span
-            v-if="carregando"
-            class="spinner-border spinner-border-sm me-2"
-            aria-hidden="true"
-          ></span>
-          <i v-else class="bi bi-arrow-clockwise me-2" aria-hidden="true"></i>
+          <RefreshCw :size="15" :class="{ 'animate-spin': carregando }" aria-hidden="true" />
           Atualizar
-        </button>
-        <RouterLink class="btn btn-primary" :to="{ name: 'nova-ocorrencia' }">
-          <i class="bi bi-plus-lg me-2" aria-hidden="true"></i>
+        </Button>
+        <Button @click="router.push({ name: 'nova-ocorrencia' })">
+          <Plus :size="15" aria-hidden="true" />
           Nova ocorrência
-        </RouterLink>
+        </Button>
       </template>
     </PageHeader>
 
     <div v-if="erro" class="alert alert-danger d-flex flex-wrap align-items-center gap-2" role="alert">
-      <i class="bi bi-wifi-off" aria-hidden="true"></i>
+      <WifiOff :size="16" aria-hidden="true" />
       <span class="flex-grow-1">{{ erro }}</span>
-      <button type="button" class="btn btn-sm btn-outline-danger" @click="carregar">
+      <Button type="button" variant="outline" size="sm" @click="carregar">
         Tentar novamente
-      </button>
+      </Button>
     </div>
 
     <div v-if="carregando" class="kpi-grid" aria-hidden="true">
@@ -258,7 +264,7 @@ onMounted(carregar)
       </div>
 
       <div class="dashboard-grid">
-        <section class="panel">
+        <Card class="panel dashboard-card">
           <div class="panel-header">
             <div>
               <h2 class="panel-title">Evolução mensal</h2>
@@ -282,9 +288,9 @@ onMounted(carregar)
               {{ textoComparacao }}
             </div>
           </div>
-        </section>
+        </Card>
 
-        <section class="panel">
+        <Card class="panel dashboard-card">
           <div class="panel-header">
             <div>
               <h2 class="panel-title">Cobertura geográfica</h2>
@@ -294,7 +300,7 @@ onMounted(carregar)
             </div>
             <RouterLink class="panel-link" :to="{ name: 'mapa' }">
               Abrir mapa
-              <i class="bi bi-arrow-up-right" aria-hidden="true"></i>
+              <ArrowUpRight :size="14" aria-hidden="true" />
             </RouterLink>
           </div>
 
@@ -318,11 +324,11 @@ onMounted(carregar)
               </div>
             </dl>
           </div>
-        </section>
+        </Card>
       </div>
 
       <div class="dashboard-grid">
-        <section class="panel">
+        <Card class="panel dashboard-card">
           <div class="panel-header">
             <div>
               <h2 class="panel-title">Ocorrências recentes</h2>
@@ -332,7 +338,7 @@ onMounted(carregar)
             </div>
             <RouterLink class="panel-link" :to="{ name: 'ocorrencias' }">
               Ver todas
-              <i class="bi bi-arrow-right" aria-hidden="true"></i>
+              <ArrowRight :size="14" aria-hidden="true" />
             </RouterLink>
           </div>
 
@@ -372,9 +378,9 @@ onMounted(carregar)
               </tbody>
             </table>
           </div>
-        </section>
+        </Card>
 
-        <section class="panel">
+        <Card class="panel dashboard-card">
           <div class="panel-header">
             <div>
               <h2 class="panel-title">Estados com mais registros</h2>
@@ -407,30 +413,29 @@ onMounted(carregar)
               </li>
             </ul>
           </div>
-        </section>
+        </Card>
       </div>
 
       <p class="texto-3 small mb-0">
-        <i class="bi bi-info-circle me-1" aria-hidden="true"></i>
+        <Info :size="14" class="me-1" aria-hidden="true" />
         Indicadores calculados a partir da API. Severidade, status e área são
         metadados demonstrativos.
-        <span v-if="ultimaAtualizacao"> Atualizado às {{ ultimaAtualizacao }}.</span>
       </p>
     </template>
 
-    <div v-else class="panel">
+    <Card v-else class="panel dashboard-card">
       <div class="panel-body">
         <EmptyState
           titulo="Nenhuma ocorrência cadastrada"
           descricao="Cadastre a primeira ocorrência para acompanhar os indicadores ambientais."
           icone="bi-clipboard-plus"
         >
-          <RouterLink class="btn btn-primary" :to="{ name: 'nova-ocorrencia' }">
-            <i class="bi bi-plus-lg me-2" aria-hidden="true"></i>
+          <Button @click="router.push({ name: 'nova-ocorrencia' })">
+            <Plus :size="15" aria-hidden="true" />
             Cadastrar primeira ocorrência
-          </RouterLink>
+          </Button>
         </EmptyState>
       </div>
-    </div>
+    </Card>
   </div>
 </template>

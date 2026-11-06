@@ -1,8 +1,11 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
+import { CheckCircle, Clock3, Eye, EyeOff, LogIn, TriangleAlert } from 'lucide-vue-next'
 
 import AuthShell from '@/components/AuthShell.vue'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { useAuthStore } from '@/stores/auth'
 
 const auth = useAuthStore()
@@ -113,7 +116,7 @@ async function entrar() {
       class="alert alert-warning d-flex align-items-start gap-2 mensagem-erro"
       role="alert"
     >
-      <i class="bi bi-clock-history mt-1" aria-hidden="true"></i>
+      <Clock3 :size="16" class="mt-1" aria-hidden="true" />
       <span>{{ mensagemSessao }}</span>
     </div>
 
@@ -122,7 +125,7 @@ async function entrar() {
       class="alert alert-success d-flex align-items-start gap-2"
       role="alert"
     >
-      <i class="bi bi-check-circle mt-1" aria-hidden="true"></i>
+      <CheckCircle :size="16" class="mt-1" aria-hidden="true" />
       <span>{{ sucesso }}</span>
     </div>
 
@@ -131,14 +134,14 @@ async function entrar() {
       class="alert alert-danger d-flex align-items-start gap-2 mensagem-erro"
       role="alert"
     >
-      <i class="bi bi-exclamation-triangle mt-1" aria-hidden="true"></i>
+      <TriangleAlert :size="16" class="mt-1" aria-hidden="true" />
       <span>{{ erro }}</span>
     </div>
 
     <form novalidate @submit.prevent="entrar">
       <div class="mb-3">
         <label for="login-email" class="form-label">Email</label>
-        <input
+        <Input
           id="login-email"
           v-model="form.email"
           type="email"
@@ -157,7 +160,7 @@ async function entrar() {
       <div class="mb-4">
         <label for="login-senha" class="form-label">Senha</label>
         <div class="input-group input-group-lg has-validation">
-          <input
+          <Input
             id="login-senha"
             v-model="form.senha"
             :type="mostrarSenha ? 'text' : 'password'"
@@ -167,39 +170,33 @@ async function entrar() {
             placeholder="Sua senha"
             @input="limparCampo('senha')"
           />
-          <button
+          <Button
             type="button"
-            class="btn btn-outline-secondary"
+            variant="outline"
+            size="icon"
             :aria-label="
               mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'
             "
             @click="mostrarSenha = !mostrarSenha"
           >
-            <i
-              class="bi"
-              :class="mostrarSenha ? 'bi-eye-slash' : 'bi-eye'"
-              aria-hidden="true"
-            ></i>
-          </button>
+            <EyeOff v-if="mostrarSenha" :size="17" aria-hidden="true" />
+            <Eye v-else :size="17" aria-hidden="true" />
+          </Button>
           <div v-if="campos.senha" class="invalid-feedback">
             {{ campos.senha }}
           </div>
         </div>
       </div>
 
-      <button
+      <Button
         type="submit"
-        class="btn btn-primary btn-lg w-100"
+        size="lg"
+        class="w-100"
         :disabled="carregando"
       >
-        <span
-          v-if="carregando"
-          class="spinner-border spinner-border-sm me-2"
-          aria-hidden="true"
-        ></span>
-        <i v-else class="bi bi-box-arrow-in-right me-2" aria-hidden="true"></i>
+        <LogIn v-if="!carregando" :size="17" aria-hidden="true" />
         {{ carregando ? 'Entrando...' : 'Entrar' }}
-      </button>
+      </Button>
     </form>
 
     <p class="text-center text-secondary mt-4 mb-0">

@@ -1,6 +1,9 @@
 <script setup>
 import { computed } from 'vue'
+import { ChevronLeft, ChevronRight } from 'lucide-vue-next'
 
+import { Button } from '@/components/ui/button'
+import { Select } from '@/components/ui/select'
 import { formatarNumero } from '@/utils/format'
 
 const props = defineProps({
@@ -100,8 +103,8 @@ function alterarTamanho(evento) {
 
     <div class="table-footer-controls">
       <label class="page-size-control">
-        <select
-          class="form-select form-select-sm"
+        <Select
+          class="page-size-select"
           :value="pageSize"
           :disabled="disabled"
           aria-label="Itens por página"
@@ -114,26 +117,29 @@ function alterarTamanho(evento) {
           >
             {{ opcao }}
           </option>
-        </select>
+        </Select>
         <span>por página</span>
       </label>
 
       <nav class="eco-pagination" aria-label="Paginação">
-        <button
+        <Button
           type="button"
+          variant="outline"
+          size="icon"
           class="eco-page-btn"
           :disabled="disabled || page <= 1"
           aria-label="Página anterior"
           @click="irPara(page - 1)"
         >
-          <i class="bi bi-chevron-left" aria-hidden="true"></i>
-        </button>
+          <ChevronLeft :size="15" aria-hidden="true" />
+        </Button>
 
         <template v-for="(numero, indice) in itensPagina" :key="`${numero}-${indice}`">
           <span v-if="numero === '…'" class="eco-page-gap" aria-hidden="true">…</span>
-          <button
+          <Button
             v-else
             type="button"
+            variant="outline"
             class="eco-page-btn"
             :class="{ 'eco-page-btn-ativa': numero === page }"
             :aria-current="numero === page ? 'page' : undefined"
@@ -141,18 +147,20 @@ function alterarTamanho(evento) {
             @click="irPara(numero)"
           >
             {{ numero }}
-          </button>
+          </Button>
         </template>
 
-        <button
+        <Button
           type="button"
+          variant="outline"
+          size="icon"
           class="eco-page-btn"
           :disabled="disabled || page >= pages"
           aria-label="Próxima página"
           @click="irPara(page + 1)"
         >
-          <i class="bi bi-chevron-right" aria-hidden="true"></i>
-        </button>
+          <ChevronRight :size="15" aria-hidden="true" />
+        </Button>
       </nav>
     </div>
   </div>

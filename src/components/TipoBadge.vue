@@ -1,6 +1,8 @@
 <script setup>
 import { computed } from 'vue'
+import { Flame, TreePine } from 'lucide-vue-next'
 
+import { Badge } from '@/components/ui/badge'
 import { corTipo, rotuloTipo } from '@/utils/format'
 
 const props = defineProps({
@@ -12,21 +14,20 @@ const props = defineProps({
 
 const rotulo = computed(() => rotuloTipo(props.tipo))
 const cor = computed(() => corTipo(props.tipo))
-const icone = computed(() =>
-  props.tipo === 'queimada' ? 'bi-fire' : 'bi-tree',
-)
+const icone = computed(() => (props.tipo === 'queimada' ? Flame : TreePine))
 </script>
 
 <template>
-  <span
-    class="badge eco-badge tipo-badge"
+  <Badge
+    variant="outline"
+    class="eco-badge tipo-badge"
     :style="{
       '--badge-cor': cor,
       color: cor,
       backgroundColor: `${cor}18`,
     }"
   >
-    <i class="bi" :class="icone" aria-hidden="true"></i>
+    <component :is="icone" :size="13" :stroke-width="2.5" aria-hidden="true" />
     {{ rotulo }}
-  </span>
+  </Badge>
 </template>

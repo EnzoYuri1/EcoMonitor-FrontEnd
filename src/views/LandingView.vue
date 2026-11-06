@@ -1,18 +1,46 @@
 <script setup>
 import { RouterLink } from 'vue-router'
-import amazonRainforest from '../assets/amazon-rainforest.jpg'
+import {
+  Activity,
+  BookOpen,
+  FileChartColumn,
+  LogIn,
+  MapPin,
+  TreePine,
+  UserPlus,
+} from 'lucide-vue-next'
+
+import { Button } from '@/components/ui/button'
+
+const funcionalidades = [
+  {
+    icone: MapPin,
+    titulo: 'Monitoramento no mapa',
+    descricao: 'Visualize a distribuição das ocorrências no território.',
+  },
+  {
+    icone: BookOpen,
+    titulo: 'Registro organizado',
+    descricao: 'Reúna localização, descrição e evidências em um só lugar.',
+  },
+  {
+    icone: Activity,
+    titulo: 'Acompanhamento das análises',
+    descricao: 'Consulte status, severidade e histórico do registro.',
+  },
+  {
+    icone: FileChartColumn,
+    titulo: 'Relatórios do período',
+    descricao: 'Transforme registros em uma leitura consolidada.',
+  },
+]
 </script>
 
 <template>
   <div class="landing-page">
     <header class="landing-header">
       <RouterLink class="brand" :to="{ name: 'inicio' }">
-        <span class="brand-symbol" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.4" />
-            <path d="M3.5 12h3.2l1.8-4.4 2.6 8.8 2.2-4.4h3.2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-          </svg>
-        </span>
+        <img class="brand-logo" src="/logo-ecomonitor-original.png" alt="" aria-hidden="true" />
         <span class="brand-name">EcoMonitor</span>
       </RouterLink>
 
@@ -22,8 +50,14 @@ import amazonRainforest from '../assets/amazon-rainforest.jpg'
       </nav>
 
       <div class="landing-actions">
-        <RouterLink class="btn btn-outline-secondary btn-sm" :to="{ name: 'login' }">Entrar</RouterLink>
-        <RouterLink class="btn btn-primary btn-sm" :to="{ name: 'cadastro' }">Criar conta</RouterLink>
+        <Button variant="outline" size="sm" @click="$router.push({ name: 'login' })">
+          <LogIn :size="14" aria-hidden="true" />
+          Entrar
+        </Button>
+        <Button size="sm" @click="$router.push({ name: 'cadastro' })">
+          <UserPlus :size="14" aria-hidden="true" />
+          Criar conta
+        </Button>
       </div>
     </header>
 
@@ -36,41 +70,40 @@ import amazonRainforest from '../assets/amazon-rainforest.jpg'
             Registre queimadas e desmatamentos, acompanhe o território e reúna
             informações para apoiar a análise da sua equipe.
           </p>
+          <a class="landing-text-link" href="#o-que-e">
+            Entenda como funciona
+          </a>
+          <div class="landing-proof">
+            <span class="landing-proof-dot" aria-hidden="true"></span>
+            <span>Uma base única para decisões ambientais mais contextualizadas</span>
+          </div>
         </div>
 
-        <div class="landing-preview" aria-label="Prévia demonstrativa da plataforma">
-          <div class="landing-preview-bar">
-            <span class="landing-preview-title">EcoMonitor / Visão geral</span>
-            <span class="landing-demo-label">Dados demonstrativos</span>
-          </div>
-          <div class="landing-preview-heading">
-            <div><h2>Pressão no território</h2><span>Ocorrências ambientais organizadas por região</span></div>
-            <small>Outubro de 2026</small>
-          </div>
-          <div class="landing-preview-kpis">
-            <div><strong>128</strong><small>Ocorrências</small></div>
-            <div><strong>3.842 <em>ha</em></strong><small>Área estimada</small></div>
-            <div><strong>41</strong><small>Em análise</small></div>
-          </div>
-          <div class="landing-preview-body">
-            <div class="landing-preview-map">
-              <img class="landing-map-photo" :src="amazonRainforest" alt="Imagem aérea da Amazônia com o rio atravessando a floresta" />
-              <span class="landing-map-photo-title">Amazônia</span>
-              <span class="landing-map-pin landing-map-pin-a"><i class="bi bi-geo-alt-fill" aria-hidden="true"></i></span>
-              <span class="landing-map-pin landing-map-pin-b"><i class="bi bi-geo-alt-fill" aria-hidden="true"></i></span>
-              <div class="landing-map-tools" aria-hidden="true">
-                <span><i class="bi bi-plus"></i></span>
-                <span><i class="bi bi-dash"></i></span>
-              </div>
-              <span class="landing-map-label">Imagem aérea demonstrativa · N ↑</span>
-            </div>
-          </div>
-          <div class="landing-preview-footer">
-            <span><i class="landing-legend-dot landing-legend-fire"></i> Queimadas</span>
-            <span><i class="landing-legend-dot landing-legend-forest"></i> Desmatamento</span>
-            <strong>EC-2026-0128 · São Félix do Xingu · PA</strong>
-            <small>Em análise</small>
-          </div>
+        <div class="landing-hero-image">
+          <img
+            src="/hero-amazonia.jpg"
+            alt="Vista aérea da floresta amazônica"
+          />
+        </div>
+      </section>
+
+      <section id="o-que-e" class="landing-intro landing-container">
+        <div class="landing-intro-mark" aria-hidden="true">
+          <TreePine :size="22" />
+        </div>
+        <div>
+          <p class="landing-eyebrow">O que é o EcoMonitor?</p>
+          <h2>Um espaço de trabalho para transformar registros em contexto.</h2>
+          <p>
+            O EcoMonitor ajuda equipes a registrar, localizar e acompanhar
+            ocorrências ambientais. Tudo fica organizado para que a análise do
+            território seja mais rápida, clara e responsável.
+          </p>
+        </div>
+        <div class="landing-intro-stats" aria-label="Resumo da plataforma">
+          <div><strong>01</strong><span>base centralizada</span></div>
+          <div><strong>24h</strong><span>visão do período</span></div>
+          <div><strong>100%</strong><span>contexto no registro</span></div>
         </div>
       </section>
 
@@ -80,25 +113,11 @@ import amazonRainforest from '../assets/amazon-rainforest.jpg'
           <h2>O que aconteceu, reunido em um só registro.</h2>
           <p>Consulte a caracterização da ocorrência, a localização e os anexos que sustentam a análise da equipe.</p>
         </div>
-        <div class="landing-evidence-card" aria-label="Prévia demonstrativa de evidências ambientais">
-          <div class="landing-evidence-header"><strong>EC-2026-0128</strong><span>Em análise</span></div>
-          <small>São Félix do Xingu · Pará · Amazônia</small>
-          <div class="landing-evidence-images">
-            <div class="landing-evidence-item">
-              <img class="landing-evidence-image" :src="amazonRainforest" alt="Imagem aérea demonstrativa da Amazônia" />
-              <span>Vista aérea do perímetro</span>
-            </div>
-            <div class="landing-evidence-item">
-              <svg class="landing-evidence-image" viewBox="0 0 220 110" role="img" aria-label="Frente de fumaça demonstrativa">
-                <rect width="220" height="110" fill="#244433" />
-                <path d="M0 72 32 48l29 13 27-27 35 28 26-21 34 24 37-18v63H0Z" fill="#173323" />
-                <path d="M117 65c-16-16-8-30 4-36-5-13 9-21 17-28 1 16 13 23 8 37 15 11 8 25-2 36-8 9-18 5-27-9Z" fill="#b8c9be" fill-opacity=".72" />
-                <path d="M125 54c-8-18 2-30 14-41" fill="none" stroke="#f3f7f5" stroke-opacity=".4" stroke-width="5" />
-              </svg>
-              <span>Frente de fumaça</span>
-            </div>
-          </div>
-          <small class="landing-evidence-meta">Dados demonstrativos · sem vínculo com eventos reais</small>
+        <div class="landing-evidence-card">
+          <img
+            src="/evidence-amazonia.jpg"
+            alt="Floresta amazônica às margens de um rio"
+          />
         </div>
       </section>
 
@@ -108,15 +127,10 @@ import amazonRainforest from '../assets/amazon-rainforest.jpg'
           <h2>Informação clara para acompanhar cada registro.</h2>
         </div>
         <div class="landing-feature-grid">
-          <article v-for="item in [
-            ['bi-geo-alt', 'Monitoramento no mapa', 'Visualize a distribuição das ocorrências no território.'],
-            ['bi-journal-text', 'Registro organizado', 'Reúna localização, descrição e evidências em um só lugar.'],
-            ['bi-activity', 'Acompanhamento das análises', 'Consulte status, severidade e histórico do registro.'],
-            ['bi-file-earmark-bar-graph', 'Relatórios do período', 'Transforme registros em uma leitura consolidada.'],
-          ]" :key="item[1]" class="landing-feature">
-            <span class="landing-feature-icon"><i class="bi" :class="item[0]" aria-hidden="true"></i></span>
-            <h3>{{ item[1] }}</h3>
-            <p>{{ item[2] }}</p>
+          <article v-for="item in funcionalidades" :key="item.titulo" class="landing-feature">
+            <span class="landing-feature-icon"><component :is="item.icone" :size="19" aria-hidden="true" /></span>
+            <h3>{{ item.titulo }}</h3>
+            <p>{{ item.descricao }}</p>
           </article>
         </div>
       </section>
@@ -139,7 +153,10 @@ import amazonRainforest from '../assets/amazon-rainforest.jpg'
     </main>
 
     <footer class="landing-footer landing-container">
-      <div><strong>EcoMonitor</strong><span>Registros ambientais organizados para análise.</span></div>
+      <div class="landing-footer-brand">
+        <img class="brand-logo" src="/logo-ecomonitor-original.png" alt="" aria-hidden="true" />
+        <div><strong>EcoMonitor</strong><span>Registros ambientais organizados para análise.</span></div>
+      </div>
       <nav aria-label="Links do rodapé"><a href="#inicio">Privacidade</a><a href="#inicio">Termos de uso</a></nav>
     </footer>
   </div>

@@ -1,6 +1,6 @@
 <script setup>
 import { RouterLink } from 'vue-router'
-import amazonRainforest from '../assets/amazon-rainforest.jpg'
+import { ArrowLeft, Check } from 'lucide-vue-next'
 
 defineProps({
   titulo: {
@@ -18,18 +18,7 @@ defineProps({
   <div class="auth-page">
     <section class="auth-hero">
       <RouterLink class="brand" :to="{ name: 'inicio' }">
-        <span class="brand-symbol" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.4" />
-            <path
-              d="M3.5 12h3.2l1.8-4.4 2.6 8.8 2.2-4.4h3.2"
-              stroke="currentColor"
-              stroke-width="1.5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
-        </span>
+        <img class="brand-logo" src="/logo-ecomonitor-original.png" alt="" aria-hidden="true" />
         <span class="brand-name">EcoMonitor</span>
       </RouterLink>
 
@@ -43,30 +32,21 @@ defineProps({
           por município, tipo e período em uma única base operacional.
         </p>
 
-        <div class="auth-map-illustration" aria-label="Imagem aérea demonstrativa da Amazônia">
-          <img :src="amazonRainforest" alt="Imagem aérea da Amazônia com o rio atravessando a floresta" />
-          <span class="auth-map-title">Amazônia</span>
-          <div class="auth-map-caption">
-            <span><i class="bi bi-tree" aria-hidden="true"></i> Floresta amazônica</span>
-            <small>Imagem demonstrativa</small>
-          </div>
-        </div>
-
         <ul class="auth-features">
           <li>
-            <i class="bi bi-check2" aria-hidden="true"></i>
+            <Check :size="15" aria-hidden="true" />
             Cadastro e consulta de ocorrências ambientais
           </li>
           <li>
-            <i class="bi bi-check2" aria-hidden="true"></i>
+            <Check :size="15" aria-hidden="true" />
             Visão geral com indicadores consolidados
           </li>
           <li>
-            <i class="bi bi-check2" aria-hidden="true"></i>
+            <Check :size="15" aria-hidden="true" />
             Mapa de monitoramento e relatórios exportáveis
           </li>
           <li>
-            <i class="bi bi-check2" aria-hidden="true"></i>
+            <Check :size="15" aria-hidden="true" />
             Acesso seguro com autenticação JWT
           </li>
         </ul>
@@ -81,18 +61,7 @@ defineProps({
             class="brand d-lg-none mb-4"
             :to="{ name: 'inicio' }"
           >
-            <span class="brand-symbol" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.4" />
-                <path
-                  d="M3.5 12h3.2l1.8-4.4 2.6 8.8 2.2-4.4h3.2"
-                  stroke="currentColor"
-                  stroke-width="1.5"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-              </svg>
-            </span>
+            <img class="brand-logo" src="/logo-ecomonitor-original.png" alt="" aria-hidden="true" />
             <span class="brand-name">EcoMonitor</span>
           </RouterLink>
 
@@ -101,7 +70,7 @@ defineProps({
 
           <slot />
           <RouterLink class="auth-back-link" :to="{ name: 'inicio' }">
-            <i class="bi bi-arrow-left" aria-hidden="true"></i>
+            <ArrowLeft :size="14" aria-hidden="true" />
             Voltar ao início
           </RouterLink>
         </div>

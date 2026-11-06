@@ -1,5 +1,6 @@
 <script setup>
 import BaseModal from './BaseModal.vue'
+import { Button } from '@/components/ui/button'
 
 defineProps({
   modelValue: {
@@ -50,28 +51,22 @@ function fechar() {
     <p class="mb-0 mensagem-confirmacao">{{ message }}</p>
 
     <template #footer>
-      <button
+      <Button
         type="button"
-        class="btn btn-outline-secondary"
+        variant="outline"
         :disabled="loading"
         @click="fechar"
       >
         {{ cancelLabel }}
-      </button>
-      <button
+      </Button>
+      <Button
         type="button"
-        class="btn"
-        :class="`btn-${variant}`"
+        :variant="variant === 'danger' ? 'destructive' : 'default'"
         :disabled="loading"
         @click="emit('confirm')"
       >
-        <span
-          v-if="loading"
-          class="spinner-border spinner-border-sm me-2"
-          aria-hidden="true"
-        ></span>
         {{ confirmLabel }}
-      </button>
+      </Button>
     </template>
   </BaseModal>
 </template>

@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 
+import { Badge } from '@/components/ui/badge'
 import { corStatus, rotuloStatus } from '@/utils/format'
 
 const props = defineProps({
@@ -15,8 +16,9 @@ const cor = computed(() => corStatus(props.status))
 </script>
 
 <template>
-  <span
-    class="badge eco-badge status-badge"
+  <Badge
+    variant="outline"
+    class="eco-badge status-badge"
     :style="{
       color: cor,
       backgroundColor: `${cor}18`,
@@ -24,5 +26,5 @@ const cor = computed(() => corStatus(props.status))
   >
     <span class="badge-dot" aria-hidden="true"></span>
     {{ rotulo }}
-  </span>
+  </Badge>
 </template>

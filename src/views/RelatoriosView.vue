@@ -390,7 +390,7 @@ onMounted(carregar)
 
       <div class="filters-spacer"></div>
 
-      <div class="d-flex gap-2">
+      <div class="filter-actions d-flex gap-2">
         <button type="submit" class="btn btn-primary">
           <i class="bi bi-funnel me-1" aria-hidden="true"></i>
           Aplicar
@@ -464,18 +464,7 @@ onMounted(carregar)
     <div v-else class="report-layout">
       <article id="relatorio-impressao" class="report-preview">
         <div class="report-brand">
-          <span class="brand-symbol" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.4" />
-              <path
-                d="M3.5 12h3.2l1.8-4.4 2.6 8.8 2.2-4.4h3.2"
-                stroke="currentColor"
-                stroke-width="1.5"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
-          </span>
+          <img class="brand-logo" src="/logo-ecomonitor-original.png" alt="" aria-hidden="true" />
           <strong>EcoMonitor</strong>
         </div>
 
