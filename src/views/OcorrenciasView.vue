@@ -1,5 +1,12 @@
 <script setup>
-import { computed, onMounted, reactive, ref, watch } from 'vue'
+import {
+  computed,
+  onBeforeUnmount,
+  onMounted,
+  reactive,
+  ref,
+  watch,
+} from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 
 import BaseModal from '@/components/BaseModal.vue'
@@ -47,6 +54,7 @@ const filtros = reactive({
   status: '',
 })
 
+const buscaDigitada = ref('')
 const ordenacao = ref('recentes')
 const pagina = ref(1)
 const pageSize = ref(8)
@@ -183,6 +191,15 @@ const mensagemExclusao = computed(() => {
   return `Excluir ${ocorrenciaExclusao.value.codigo} de ${ocorrenciaExclusao.value.municipio}/${ocorrenciaExclusao.value.estado}? Esta ação não pode ser desfeita.`
 })
 
+let buscaTimer = null
+
+watch(buscaDigitada, (valor) => {
+  clearTimeout(buscaTimer)
+  buscaTimer = setTimeout(() => {
+    filtros.busca = valor
+  }, 180)
+})
+
 watch(filtros, () => {
   pagina.value = 1
 })
@@ -230,6 +247,8 @@ function aplicarStatus(valor) {
 
 function limparFiltros() {
   limparFeedback()
+  clearTimeout(buscaTimer)
+  buscaDigitada.value = ''
   Object.assign(filtros, {
     busca: '',
     tipo: '',
@@ -498,6 +517,10 @@ onMounted(async () => {
 
   if (item && ehResponsavel(item)) abrirEdicao(item)
 })
+
+onBeforeUnmount(() => {
+  clearTimeout(buscaTimer)
+})
 </script>
 
 <template>
@@ -543,7 +566,7 @@ onMounted(async () => {
           <i class="bi bi-search" aria-hidden="true"></i>
           <input
             id="listagem-busca"
-            v-model="filtros.busca"
+            v-model="buscaDigitada"
             type="search"
             class="form-control"
             placeholder="Código, município ou UF"
