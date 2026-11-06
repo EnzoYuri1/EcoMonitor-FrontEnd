@@ -75,6 +75,7 @@ const mapaPronto = ref(false)
 
 let mapa = null
 let camadaMarcadores = null
+const marcadoresPorId = new Map()
 
 const enriquecidos = computed(() =>
   demo.enriquecerLista(
@@ -190,6 +191,7 @@ function renderizarMarcadores() {
   if (!mapa || !camadaMarcadores) return
 
   camadaMarcadores.clearLayers()
+  marcadoresPorId.clear()
 
   for (const item of mapeaveis.value) {
     const ativo = selecionada.value?.id === item.id
@@ -209,6 +211,18 @@ function renderizarMarcadores() {
     )
     marcador.on('click', () => selecionar(item))
     camadaMarcadores.addLayer(marcador)
+    marcadoresPorId.set(item.id, marcador)
+  }
+}
+
+function atualizarMarcadoresSelecionados() {
+  for (const item of mapeaveis.value) {
+    const marcador = marcadoresPorId.get(item.id)
+    if (!marcador) continue
+
+    const ativo = selecionada.value?.id === item.id
+    marcador.setIcon(criarIcone(item.tipo, ativo))
+    marcador.setZIndexOffset(ativo ? 1000 : 0)
   }
 }
 
@@ -337,11 +351,10 @@ watch(
       selecionada.value = mapeaveis.value[0] || null
     }
   },
-  { deep: true },
 )
 
 watch(selecionada, () => {
-  renderizarMarcadores()
+  atualizarMarcadoresSelecionados()
 })
 
 onMounted(async () => {
@@ -357,6 +370,7 @@ onBeforeUnmount(() => {
   }
 
   camadaMarcadores = null
+  marcadoresPorId.clear()
   mapaPronto.value = false
 })
 </script>
