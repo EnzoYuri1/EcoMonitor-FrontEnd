@@ -1,5 +1,12 @@
 <script setup>
-import { computed, onMounted, reactive, ref, watch } from 'vue'
+import {
+  computed,
+  onBeforeUnmount,
+  onMounted,
+  reactive,
+  ref,
+  watch,
+} from 'vue'
 import { RouterLink } from 'vue-router'
 
 import EmptyState from '@/components/EmptyState.vue'
@@ -39,6 +46,8 @@ const municipios = ref([])
 const anexos = ref([])
 const rascunhoSalvo = ref(null)
 const rascunhoRestaurado = ref(false)
+
+let rascunhoTimer = null
 
 const coordenadaMapa = computed(() => {
   if (
@@ -113,6 +122,11 @@ function salvarRascunho() {
   } catch {
     // O rascunho é opcional e pode falhar em modo privado.
   }
+}
+
+function agendarSalvamentoRascunho() {
+  clearTimeout(rascunhoTimer)
+  rascunhoTimer = setTimeout(salvarRascunho, 400)
 }
 
 function removerRascunho() {
@@ -305,7 +319,7 @@ function cadastrarOutra() {
   descartarRascunho()
 }
 
-watch(form, salvarRascunho, { deep: true })
+watch(form, agendarSalvamentoRascunho, { deep: true })
 
 onMounted(async () => {
   const rascunho = lerRascunho()
@@ -338,6 +352,10 @@ onMounted(async () => {
     // As sugestões são opcionais; o cadastro continua disponível.
     municipios.value = []
   }
+})
+
+onBeforeUnmount(() => {
+  clearTimeout(rascunhoTimer)
 })
 </script>
 
