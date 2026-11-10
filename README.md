@@ -129,7 +129,6 @@ Verifique:
 ## Iniciar o frontend
 
 ```powershell
-cd C:\Users\desenvolvimento4\EcoMonitor-Frontend-Vue
 npm run dev
 ```
 
