@@ -51,6 +51,11 @@ const migalhas = computed(() => {
       ]
     case 'relatorios':
       return [{ rotulo: 'Análise' }, { rotulo: 'Relatórios' }]
+    case 'central':
+      return [
+        { rotulo: 'Inteligência' },
+        { rotulo: 'Central de Informações Ambientais' },
+      ]
     default:
       return [{ rotulo: route.meta.title || 'EcoMonitor' }]
   }

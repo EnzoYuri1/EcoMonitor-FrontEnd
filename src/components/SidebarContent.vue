@@ -51,6 +51,11 @@ const links = [
     rotulo: 'Relatórios',
     icone: FileChartColumn,
   },
+  {
+    nome: 'central',
+    rotulo: 'Central ambiental',
+    icone: 'bi-newspaper',
+  },
 ]
 
 const iniciais = computed(() => {

@@ -47,6 +47,7 @@ const funcionalidades = [
       <nav class="landing-nav" aria-label="Navegação principal">
         <a href="#funcionalidades">Funcionalidades</a>
         <a href="#como-funciona">Como funciona</a>
+        <RouterLink :to="{ name: 'central-publica' }">Central Ambiental</RouterLink>
       </nav>
 
       <div class="landing-actions">

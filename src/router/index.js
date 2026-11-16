@@ -11,6 +11,12 @@ const routes = [
     meta: { title: 'Monitoramento ambiental' },
   },
   {
+    path: '/central',
+    name: 'central-publica',
+    component: () => import('../views/CentralAmbientalView.vue'),
+    meta: { title: 'Central de Informações Ambientais' },
+  },
+  {
     path: '/login',
     name: 'login',
     component: () => import('../views/LoginView.vue'),
@@ -67,6 +73,12 @@ const routes = [
         name: 'relatorios',
         component: () => import('../views/RelatoriosView.vue'),
         meta: { title: 'Relatórios' },
+      },
+      {
+        path: 'central',
+        name: 'central',
+        component: () => import('../views/CentralAmbientalView.vue'),
+        meta: { title: 'Central de Informações Ambientais' },
       },
     ],
   },
