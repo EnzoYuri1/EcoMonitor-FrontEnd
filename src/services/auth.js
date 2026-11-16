@@ -14,3 +14,8 @@ export async function obterUsuarioAtual() {
   const { data } = await api.get('/auth/me')
   return data
 }
+
+export async function listarUsuarios() {
+  const { data } = await api.get('/auth/users')
+  return data
+}

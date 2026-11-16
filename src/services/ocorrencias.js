@@ -67,3 +67,57 @@ export async function atualizarOcorrencia(id, dados) {
 export async function excluirOcorrencia(id) {
   await api.delete(`/ocorrencias/${id}`)
 }
+
+export async function triarOcorrencia(id, dados) {
+  const { data } = await api.patch(`/ocorrencias/${id}/triagem`, dados)
+  return data
+}
+
+export async function criarAtividade(id, dados) {
+  const { data } = await api.post(`/ocorrencias/${id}/atividades`, dados)
+  return data
+}
+
+export async function atualizarAtividade(id, atividadeId, dados) {
+  const { data } = await api.patch(
+    `/ocorrencias/${id}/atividades/${atividadeId}`,
+    dados,
+  )
+  return data
+}
+
+export async function enviarEvidencia(id, categoria, arquivo) {
+  const formulario = new FormData()
+  formulario.append('categoria', categoria)
+  formulario.append('arquivo', arquivo)
+
+  const { data } = await api.post(
+    `/ocorrencias/${id}/evidencias`,
+    formulario,
+  )
+  return data
+}
+
+export async function baixarEvidencia(ocorrenciaId, evidenciaId) {
+  const { data } = await api.get(
+    `/ocorrencias/${ocorrenciaId}/evidencias/${evidenciaId}/download`,
+    { responseType: 'blob' },
+  )
+  return data
+}
+
+export async function solicitarConclusao(id, resolucao) {
+  const { data } = await api.post(
+    `/ocorrencias/${id}/solicitar-conclusao`,
+    { resolucao },
+  )
+  return data
+}
+
+export async function validarConclusao(id, aprovado, comentario = '') {
+  const { data } = await api.post(
+    `/ocorrencias/${id}/validar-conclusao`,
+    { aprovado, comentario },
+  )
+  return data
+}

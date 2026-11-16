@@ -5,7 +5,7 @@ import { RouterLink } from 'vue-router'
 import EmptyState from '@/components/EmptyState.vue'
 import MiniMapa from '@/components/MiniMapa.vue'
 import PageHeader from '@/components/PageHeader.vue'
-import { criarOcorrencia } from '@/services/ocorrencias'
+import { criarOcorrencia, enviarEvidencia } from '@/services/ocorrencias'
 import { obterEstatisticas } from '@/services/stats'
 import { TIPOS, UFS } from '@/utils/constants'
 import { codigoOcorrencia } from '@/utils/demo'
@@ -33,6 +33,7 @@ const form = reactive({
 
 const campos = ref({})
 const erro = ref('')
+const erroAnexos = ref('')
 const carregando = ref(false)
 const sucesso = ref(null)
 const municipios = ref([])
@@ -130,6 +131,7 @@ function descartarRascunho() {
   removerRascunho()
   sucesso.value = null
   erro.value = ''
+  erroAnexos.value = ''
   campos.value = {}
   anexos.value = []
 
@@ -177,15 +179,30 @@ function formatarTamanho(bytes) {
 
 function adicionarArquivos(evento) {
   const arquivos = Array.from(evento.target.files || [])
+  erroAnexos.value = ''
 
   anexos.value = [
     ...anexos.value,
-    ...arquivos.map((arquivo, indice) => ({
-      id: `${arquivo.name}-${arquivo.size}-${Date.now()}-${indice}`,
-      nome: arquivo.name,
-      tamanho: formatarTamanho(arquivo.size),
-      tipo: arquivo.type,
-    })),
+    ...arquivos.flatMap((arquivo, indice) => {
+      const extensao = arquivo.name.split('.').pop()?.toLowerCase()
+      const tipoValido =
+        ['jpg', 'jpeg'].includes(extensao) && arquivo.type === 'image/jpeg' ||
+        extensao === 'png' && arquivo.type === 'image/png' ||
+        extensao === 'pdf' && arquivo.type === 'application/pdf'
+
+      if (!tipoValido || arquivo.size > 10 * 1024 * 1024) {
+        erroAnexos.value =
+          'Use arquivos PDF, JPG ou PNG de até 10 MB cada.'
+        return []
+      }
+
+      return [{
+        id: `${arquivo.name}-${arquivo.size}-${Date.now()}-${indice}`,
+        nome: arquivo.name,
+        tamanho: formatarTamanho(arquivo.size),
+        arquivo,
+      }]
+    }),
   ]
 
   evento.target.value = ''
@@ -230,6 +247,10 @@ function validar() {
     erros.data_ocorrencia = 'Informe a data da ocorrência.'
   } else if (form.data_ocorrencia > hoje) {
     erros.data_ocorrencia = 'A data da ocorrência não pode ser futura.'
+  }
+
+  if (!anexos.value.length) {
+    erros.anexos = 'Anexe ao menos uma evidência inicial.'
   }
 
   if (form.informarCoordenadas) {
@@ -289,6 +310,16 @@ async function salvar() {
   try {
     sucesso.value = await criarOcorrencia(montarPayload())
     removerRascunho()
+    for (const anexo of anexos.value) {
+      try {
+        await enviarEvidencia(sucesso.value.id, 'inicial', anexo.arquivo)
+      } catch (error) {
+        erro.value =
+          `Ocorrência cadastrada, mas não foi possível enviar ${anexo.nome}. ` +
+          (error?.message || 'Tente anexar o documento novamente no detalhe.')
+        break
+      }
+    }
   } catch (error) {
     erro.value =
       error?.message ||
@@ -358,6 +389,9 @@ onMounted(async () => {
 
     <div v-if="sucesso" class="panel">
       <div class="panel-body">
+        <div v-if="erro" class="alert alert-warning" role="alert">
+          {{ erro }}
+        </div>
         <EmptyState
           titulo="Ocorrência cadastrada"
           :descricao="mensagemSucesso"
@@ -611,41 +645,52 @@ onMounted(async () => {
           <div class="form-section">
             <div class="form-section-header">
               <div>
-                <h2 class="form-section-title">Anexos demonstrativos</h2>
+                <h2 class="form-section-title">Evidências iniciais</h2>
                 <p class="form-section-desc">
-                  Prévia local. Os arquivos não são enviados nem gravados no backend.
+                  Anexe documentos que apoiem o registro. São exigidos para iniciar a triagem.
                 </p>
               </div>
               <span class="rascunho-chip">
-                <i class="bi bi-eye" aria-hidden="true"></i>
-                Visual
+                <i class="bi bi-lock" aria-hidden="true"></i>
+                Privado
               </span>
             </div>
 
             <label class="dropzone d-block" for="ocorrencia-anexos">
               <i class="bi bi-cloud-arrow-up" aria-hidden="true"></i>
               <p class="mb-0">
-                Selecionar imagens de apoio
-                <span class="texto-3">· JPG, PNG ou WEBP</span>
+                Selecionar evidências
+                <span class="texto-3">· PDF, JPG ou PNG · até 10 MB por arquivo</span>
               </p>
               <input
                 id="ocorrencia-anexos"
                 type="file"
                 class="visually-hidden"
-                accept="image/*"
+                accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
                 multiple
                 @change="adicionarArquivos"
               />
             </label>
 
+            <p v-if="erroAnexos" class="invalid-feedback d-block mt-2">
+              {{ erroAnexos }}
+            </p>
+            <p v-if="campos.anexos" class="invalid-feedback d-block mt-2">
+              {{ campos.anexos }}
+            </p>
+
             <ul v-if="anexos.length" class="anexos-lista">
               <li v-for="anexo in anexos" :key="anexo.id" class="anexo-item">
-                <i class="bi bi-image" aria-hidden="true"></i>
+                <i
+                  class="bi"
+                  :class="anexo.nome.toLowerCase().endsWith('.pdf') ? 'bi-file-earmark-pdf' : 'bi-image'"
+                  aria-hidden="true"
+                ></i>
                 <div class="anexo-info">
                   <p class="anexo-nome">{{ anexo.nome }}</p>
                   <p class="anexo-meta">{{ anexo.tamanho }}</p>
                 </div>
-                <span class="anexo-status-ok">Prévia local</span>
+                <span class="anexo-status-ok">Pronto para enviar</span>
                 <button
                   type="button"
                   class="anexo-remover"
@@ -658,7 +703,7 @@ onMounted(async () => {
             </ul>
 
             <p v-else class="form-hint mb-0">
-              Nenhum arquivo selecionado.
+              Selecione ao menos um documento para enviar o registro.
             </p>
           </div>
 

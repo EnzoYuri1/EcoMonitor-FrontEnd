@@ -36,12 +36,19 @@ const links = [
     rotulo: 'Ocorrências',
     icone: 'bi-list-check',
   },
-  {
-    nome: 'relatorios',
-    rotulo: 'Relatórios',
-    icone: 'bi-file-earmark-bar-graph',
-  },
 ]
+const linksVisiveis = computed(() =>
+  auth.user?.perfil === 'administrador'
+    ? [
+        ...links,
+        {
+          nome: 'relatorios',
+          rotulo: 'Relatórios',
+          icone: 'bi-file-earmark-bar-graph',
+        },
+      ]
+    : links,
+)
 
 const iniciais = computed(() => {
   const nome = (auth.nomeUsuario || 'Marina Costa').trim()
@@ -104,7 +111,7 @@ function ehAtivo(link) {
 
     <nav class="sidebar-nav" aria-label="Menu principal">
       <RouterLink
-        v-for="link in links"
+        v-for="link in linksVisiveis"
         :key="link.nome"
         class="sidebar-link"
         :class="{ 'sidebar-link-ativo': ehAtivo(link) }"
@@ -135,7 +142,7 @@ function ehAtivo(link) {
         rel="noopener noreferrer"
       >
         <i class="bi bi-life-preserver" aria-hidden="true"></i>
-        <span>Central de ajuda</span>
+        <span>Documentação da API</span>
         <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i>
       </a>
 
@@ -143,7 +150,9 @@ function ehAtivo(link) {
         <span class="avatar" aria-hidden="true">{{ iniciais }}</span>
         <div class="sidebar-profile-texto">
           <p class="sidebar-profile-nome">{{ nomeExibicao }}</p>
-          <small class="sidebar-profile-cargo">Analista ambiental</small>
+          <small class="sidebar-profile-cargo">
+            {{ auth.user?.perfil === 'administrador' ? 'Administrador' : 'Funcionário' }}
+          </small>
         </div>
         <button
           type="button"

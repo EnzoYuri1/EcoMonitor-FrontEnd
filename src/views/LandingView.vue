@@ -127,9 +127,12 @@ import amazonRainforest from '../assets/amazon-rainforest.jpg'
           <h2>Do registro à análise, sem perder o contexto.</h2>
         </div>
         <ol class="landing-steps">
-          <li><span>01</span><div><h3>Registre a ocorrência.</h3><p>Informe o tipo, o local, a data e uma descrição do evento.</p></div></li>
-          <li><span>02</span><div><h3>Analise o contexto e as evidências.</h3><p>Consulte os registros no mapa e organize as informações disponíveis.</p></div></li>
-          <li><span>03</span><div><h3>Acompanhe os dados e os relatórios.</h3><p>Use filtros, indicadores e relatórios para apoiar a leitura do período.</p></div></li>
+          <li><span>01</span><div><h3>Registro da ocorrência.</h3><p>O funcionário cadastra as informações e as evidências iniciais.</p></div></li>
+          <li><span>02</span><div><h3>Triagem e atribuição.</h3><p>O administrador define prioridade, prazo e responsável.</p></div></li>
+          <li><span>03</span><div><h3>Execução das atividades.</h3><p>O responsável realiza as tarefas e registra as evidências da execução.</p></div></li>
+          <li><span>04</span><div><h3>Solicitação de conclusão.</h3><p>O responsável apresenta a resolução e os documentos comprobatórios.</p></div></li>
+          <li><span>05</span><div><h3>Validação documental.</h3><p>O administrador confere os documentos e as informações antes de aprovar.</p></div></li>
+          <li><span>06</span><div><h3>Encerramento.</h3><p>Com a documentação aprovada, a ocorrência é oficialmente concluída.</p></div></li>
         </ol>
       </section>
 

@@ -48,6 +48,7 @@ EcoMonitor-Frontend-Vue/
 │   │   └── styles.css
 │   ├── components/
 │   │   ├── AuthShell.vue
+│   │   ├── HelpAssistant.vue
 │   │   ├── BaseModal.vue
 │   │   ├── ConfirmDialog.vue
 │   │   ├── EmptyState.vue
@@ -206,6 +207,13 @@ origem NASA e licença de domínio público:
 ## Funcionalidades da área autenticada
 
 - Login e cadastro de usuários contra a API real.
+- Perfis de administrador e funcionário; o servidor define permissões e
+  registros visíveis, e os relatórios ficam restritos ao administrador.
+- Fluxo persistido de registro, triagem, atribuição, execução, validação
+  documental e encerramento.
+- Upload e download de evidências (PDF, JPG e PNG, até 10 MB por arquivo).
+- Ajuda guiada local sobre o uso do sistema; as perguntas não saem do navegador
+  e as respostas são baseadas em tópicos predefinidos, não em IA generativa.
 - Login automático após o cadastro.
 - Sessão com JWT em `sessionStorage`, expiração e validação via `/auth/me`.
 - Interceptor Axios que envia `Authorization: Bearer <token>`.
@@ -268,8 +276,9 @@ origem NASA e licença de domínio público:
 | `/app/visao-geral` | Dashboard | Autenticada |
 | `/app/ocorrencias` | Listagem e filtros | Autenticada |
 | `/app/ocorrencias/nova` | Nova ocorrência | Autenticada |
+| `/app/ocorrencias/:id` | Detalhes, atividades, documentos e etapas do fluxo | Autenticada e autorizada |
 | `/app/mapa` | Mapa interativo das ocorrências | Autenticada |
-| `/app/relatorios` | Relatórios consolidados e exportação CSV | Autenticada |
+| `/app/relatorios` | Relatórios consolidados e exportação CSV | Administrador |
 
 Os caminhos antigos `/dashboard`, `/ocorrencias`, `/ocorrencias/nova`,
 `/ocorrencias/:id`, `/mapa` e `/relatorios` permanecem como redirecionamentos
@@ -282,10 +291,13 @@ apresentação pública.
 - A sessão é validada com `GET /auth/me` antes de liberar as rotas protegidas.
 - Se o token estiver expirado ou a API retornar `401`, a sessão é limpa e o
   usuário volta ao login com uma mensagem.
-- Qualquer usuário autenticado pode listar e consultar ocorrências.
-- Somente o usuário que criou a ocorrência (`created_by`) pode editá-la ou
-  excluí-la. A interface esconde as ações e o backend também bloqueia com
-  `403`.
+- Administradores acessam todos os registros e podem gerenciar a triagem e a
+  validação. Funcionários acessam apenas registros próprios ou atribuídos.
+- Funcionários só alteram ou removem o próprio registro antes da triagem; as
+  ações de execução ficam restritas ao responsável atribuído. O backend aplica
+  as mesmas regras e responde `403` quando há tentativa sem permissão.
+- Para criar o primeiro administrador, siga a seção “Perfis de acesso” no
+  README do backend (`python -m app.cli create-admin`).
 
 ## Tratamento de erros
 

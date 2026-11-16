@@ -1,22 +1,15 @@
 import {
   BIOMAS_POR_UF,
   SEVERIDADES,
-  STATUS,
   STATUS_LABELS,
 } from './constants'
 
 /*
  * Camada de apresentação demonstrativa.
  *
- * A API do EcoMonitor expõe tipo, município, UF, descrição, data, coordenadas
- * e responsável. Severidade, status, área, bioma, anexos e histórico não
- * existem no contrato atual. Os valores abaixo são derivados de forma
- * determinística a partir do registro real, apenas para compor a interface.
- * Nada é gravado no backend e todos os pontos são identificados como
- * demonstrativos.
+ * Severidade, área e bioma permanecem indicadores visuais demonstrativos.
+ * Status, anexos e histórico vêm do backend e não devem ser simulados.
  */
-
-const TAMANHOS_HISTORICO = 2
 
 function hash(texto) {
   let valor = 2166136261
@@ -43,14 +36,6 @@ function severidadeDemo(chave) {
   return 'baixa'
 }
 
-function statusDemo(chave) {
-  const indice = hash(`${chave}:status`) % 8
-
-  if (indice < 3) return 'em_analise'
-  if (indice < 7) return 'confirmada'
-  return 'encerrada'
-}
-
 function areaDemo(chave) {
   const bruto = hash(`${chave}:area`) % 2400
   return Math.round((5 + bruto / 10) * 10) / 10
@@ -74,79 +59,10 @@ export function codigoOcorrencia(item = {}) {
   return `EC-${ano || '2026'}-${sufixo(item.id)}`
 }
 
-export function anexosDemo(item = {}) {
-  const codigo = sufixo(item.id)
-  const base = hash(`${item.id}:anexos`) % 4
-
-  return [
-    {
-      id: `perimetro-${codigo}`,
-      titulo: 'Vista aérea do perímetro',
-      nome: `perimetro_${codigo}.jpg`,
-      tamanho: `${(2.2 + base * 0.1).toFixed(1)} MB`,
-      tipo: 'image/jpeg',
-    },
-    {
-      id: `evidencia-${codigo}`,
-      titulo: 'Frente de fumaça',
-      nome: `evidencia_${codigo}.jpg`,
-      tamanho: `${(1.6 + base * 0.1).toFixed(1)} MB`,
-      tipo: 'image/jpeg',
-    },
-  ].slice(0, TAMANHOS_HISTORICO)
-}
-
-const FUSOS_HISTORICO = [38, 96, 184]
-
-export function historicoDemo(item = {}, responsavel = 'Equipe de monitoramento') {
-  const base = item.created_at
-    ? new Date(item.created_at)
-    : new Date(`${item.data_ocorrencia || '2026-10-31'}T14:32:00`)
-
-  if (Number.isNaN(base.getTime())) return []
-
-  const registrarStatus = statusDemo(`${item.id}:status`)
-
-  const eventos = [
-    {
-      data: new Date(base.getTime()).toISOString(),
-      titulo: 'Ocorrência registrada',
-      descricao: `${responsavel} adicionou 2 evidências ao registro.`,
-    },
-    {
-      data: new Date(
-        base.getTime() + FUSOS_HISTORICO[0] * 60000,
-      ).toISOString(),
-      titulo: 'Análise iniciada',
-      descricao: `${responsavel} assumiu a validação técnica.`,
-    },
-  ]
-
-  if (registrarStatus !== 'em_analise') {
-    eventos.push({
-      data: new Date(
-        base.getTime() + FUSOS_HISTORICO[1] * 60000,
-      ).toISOString(),
-      titulo:
-        registrarStatus === 'confirmada'
-          ? 'Ocorrência confirmada'
-          : 'Ocorrência encerrada',
-      descricao:
-        registrarStatus === 'confirmada'
-          ? 'A equipe validou os dados e confirmou o registro.'
-          : 'A análise foi concluída e o registro encerrado.',
-    })
-  }
-
-  return eventos
-    .sort((a, b) => new Date(b.data) - new Date(a.data))
-    .slice(0, 3)
-}
-
 export function enriquecerOcorrencia(item = {}) {
   const chave = `${item.id}:${item.tipo}:${item.estado}`
   const severidade = severidadeDemo(chave)
-  const status = statusDemo(chave)
+  const status = item.status || 'registrada'
   const ano = String(
     item.data_ocorrencia || item.created_at || '',
   ).slice(0, 4)
@@ -166,7 +82,6 @@ export function enriquecerOcorrencia(item = {}) {
         ? 'Vegetação nativa'
         : 'Formação florestal',
     metodo_registro: 'Análise visual',
-    anexos: anexosDemo(item),
   }
 }
 
@@ -263,9 +178,9 @@ export function calcularIndicadores(itens = []) {
   const estados = new Set()
   const municipios = new Set()
   let areaTotal = 0
-  let emAnalise = 0
-  let confirmadas = 0
-  let encerradas = 0
+  let emExecucao = 0
+  let emValidacao = 0
+  let concluidas = 0
   let criticas = 0
   let queimadas = 0
   let desmatamentos = 0
@@ -273,9 +188,9 @@ export function calcularIndicadores(itens = []) {
   for (const item of itens) {
     areaTotal += Number(item.area_estimada) || 0
 
-    if (item.status === 'em_analise') emAnalise += 1
-    if (item.status === 'confirmada') confirmadas += 1
-    if (item.status === 'encerrada') encerradas += 1
+    if (item.status === 'em_execucao') emExecucao += 1
+    if (item.status === 'em_validacao') emValidacao += 1
+    if (item.status === 'concluida') concluidas += 1
     if (item.severidade === 'critica') criticas += 1
     if (item.tipo === 'queimada') queimadas += 1
     if (item.tipo === 'desmatamento') desmatamentos += 1
@@ -291,16 +206,16 @@ export function calcularIndicadores(itens = []) {
   return {
     total: itens.length,
     areaTotal: Math.round(areaTotal * 10) / 10,
-    emAnalise,
-    confirmadas,
-    encerradas,
+    emExecucao,
+    emValidacao,
+    concluidas,
     criticas,
     queimadas,
     desmatamentos,
     estados: estados.size,
     municipios: municipios.size,
-    percentualEmAnalise:
-      itens.length > 0 ? (emAnalise / itens.length) * 100 : 0,
+    percentualEmExecucao:
+      itens.length > 0 ? (emExecucao / itens.length) * 100 : 0,
     percentualCriticas:
       itens.length > 0 ? (criticas / itens.length) * 100 : 0,
     percentualQueimadas:

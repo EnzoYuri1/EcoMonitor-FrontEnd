@@ -9,6 +9,7 @@ import {
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
 
 import SidebarContent from '@/components/SidebarContent.vue'
+import HelpAssistant from '@/components/HelpAssistant.vue'
 import { verificarSaude } from '@/services/api'
 import { useAppStore } from '@/stores/app'
 import { useAuthStore } from '@/stores/auth'
@@ -241,5 +242,7 @@ onBeforeUnmount(() => {
         </aside>
       </template>
     </Teleport>
+
+    <HelpAssistant />
   </div>
 </template>

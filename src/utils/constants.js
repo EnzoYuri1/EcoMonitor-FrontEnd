@@ -68,21 +68,37 @@ export const SEVERIDADE_CORES = {
 }
 
 export const STATUS = [
-  { value: 'em_analise', label: 'Em análise' },
-  { value: 'confirmada', label: 'Confirmada' },
-  { value: 'encerrada', label: 'Encerrada' },
+  { value: 'registrada', label: 'Registrada' },
+  { value: 'em_execucao', label: 'Em execução' },
+  { value: 'em_validacao', label: 'Aguardando validação' },
+  { value: 'concluida', label: 'Concluída' },
 ]
 
 export const STATUS_LABELS = {
-  em_analise: 'Em análise',
-  confirmada: 'Confirmada',
-  encerrada: 'Encerrada',
+  registrada: 'Registrada',
+  em_execucao: 'Em execução',
+  em_validacao: 'Aguardando validação',
+  concluida: 'Concluída',
 }
 
 export const STATUS_CORES = {
-  em_analise: '#F6C453',
-  confirmada: '#3DDC97',
-  encerrada: '#74877D',
+  registrada: '#91A69A',
+  em_execucao: '#F6C453',
+  em_validacao: '#78B7FF',
+  concluida: '#3DDC97',
+}
+
+export const PRIORIDADES = [
+  { value: 'baixa', label: 'Baixa' },
+  { value: 'media', label: 'Média' },
+  { value: 'alta', label: 'Alta' },
+  { value: 'critica', label: 'Crítica' },
+]
+
+export const CATEGORIAS_EVIDENCIA = {
+  inicial: 'Evidência inicial',
+  execucao: 'Evidência da execução',
+  conclusao: 'Documento de conclusão',
 }
 
 /* Bioma predominante por UF, usado apenas como metadado demonstrativo. */

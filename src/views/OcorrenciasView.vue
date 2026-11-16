@@ -200,6 +200,20 @@ function ehResponsavel(item) {
   return Number(item?.created_by) === Number(auth.userId)
 }
 
+function podeEditarCadastro(item) {
+  return (
+    auth.user?.perfil === 'administrador' ||
+    (ehResponsavel(item) && item.status === 'registrada')
+  )
+}
+
+function podeExcluir(item) {
+  return (
+    auth.user?.perfil === 'administrador' ||
+    (ehResponsavel(item) && item.status === 'registrada')
+  )
+}
+
 function limparCampoEdicao(campo) {
   if (camposEdicao.value[campo]) {
     const restantes = { ...camposEdicao.value }
@@ -496,7 +510,13 @@ onMounted(async () => {
     (ocorrencia) => String(ocorrencia.id) === String(idEdicao),
   )
 
-  if (item && ehResponsavel(item)) abrirEdicao(item)
+  if (
+    item &&
+    (auth.user?.perfil === 'administrador' ||
+      (ehResponsavel(item) && item.status === 'registrada'))
+  ) {
+    abrirEdicao(item)
+  }
 })
 </script>
 
@@ -712,7 +732,7 @@ onMounted(async () => {
                     <i class="bi bi-eye" aria-hidden="true"></i>
                   </RouterLink>
 
-                  <template v-if="ehResponsavel(item)">
+                  <template v-if="podeEditarCadastro(item)">
                     <button
                       type="button"
                       class="btn btn-sm btn-outline-primary"
@@ -722,6 +742,8 @@ onMounted(async () => {
                     >
                       <i class="bi bi-pencil" aria-hidden="true"></i>
                     </button>
+                  </template>
+                  <template v-if="podeExcluir(item)">
                     <button
                       type="button"
                       class="btn btn-sm btn-outline-danger"
@@ -734,9 +756,9 @@ onMounted(async () => {
                   </template>
 
                   <span
-                    v-else
+                    v-if="!podeEditarCadastro(item) && !podeExcluir(item)"
                     class="texto-3 small"
-                    title="Somente o responsável pode editar ou excluir."
+                    :title="auth.user?.perfil === 'administrador' ? 'Ação indisponível neste status.' : 'Somente o responsável ou administrador pode alterar este registro.'"
                   >
                     <i class="bi bi-lock" aria-hidden="true"></i>
                   </span>

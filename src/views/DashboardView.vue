@@ -251,9 +251,9 @@ onMounted(carregar)
           :descricao="`${formatarPercentual(indicadores.percentualDesmatamentos)} do total registrado`"
         />
         <KpiCard
-          titulo="Em análise"
-          :valor="formatarNumero(indicadores.emAnalise)"
-          :descricao="`${formatarPercentual(indicadores.percentualEmAnalise)} aguardando validação técnica`"
+          titulo="Em execução"
+          :valor="formatarNumero(indicadores.emExecucao)"
+          :descricao="`${formatarPercentual(indicadores.percentualEmExecucao)} em andamento`"
         />
       </div>
 

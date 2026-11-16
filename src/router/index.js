@@ -66,7 +66,7 @@ const routes = [
         path: 'relatorios',
         name: 'relatorios',
         component: () => import('../views/RelatoriosView.vue'),
-        meta: { title: 'Relatórios' },
+        meta: { title: 'Relatórios', requiresAdmin: true },
       },
     ],
   },
@@ -130,6 +130,10 @@ router.beforeEach(async (to) => {
         name: 'login',
         query: { redirect: to.fullPath },
       }
+    }
+
+    if (to.meta.requiresAdmin && auth.user?.perfil !== 'administrador') {
+      return { name: 'visao-geral' }
     }
   }
 
