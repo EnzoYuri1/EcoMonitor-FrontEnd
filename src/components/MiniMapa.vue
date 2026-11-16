@@ -23,6 +23,10 @@ const props = defineProps({
     type: Array,
     default: () => [],
   },
+  poligonos: {
+    type: Array,
+    default: () => [],
+  },
   altura: {
     type: String,
     default: '260px',
@@ -66,6 +70,7 @@ const emit = defineEmits(['selecionar', 'clique'])
 const el = ref(null)
 
 let mapa = null
+let camadaPoligonos = null
 let camadaPontos = null
 let camadaValor = null
 let escala = null
@@ -98,21 +103,30 @@ function criarIcone(tipo) {
 function ajustar() {
   if (!mapa) return
 
+  const coordsLimites = []
+
+  for (const poly of props.poligonos || []) {
+    const lista = Array.isArray(poly?.coordenadas) ? poly.coordenadas : []
+    for (const par of lista) {
+      if (Array.isArray(par) && coordenadaValida(par[0], par[1])) {
+        coordsLimites.push([Number(par[0]), Number(par[1])])
+      }
+    }
+  }
+
   const pontos = props.pontos.filter(
     (item) =>
       coordenadaValida(item.latitude, item.longitude) &&
       dentroDoBrasil(item.latitude, item.longitude),
   )
 
-  if (pontos.length) {
-    const limites = L.latLngBounds(
-      pontos.map((item) => [
-        Number(item.latitude),
-        Number(item.longitude),
-      ]),
-    )
+  for (const item of pontos) {
+    coordsLimites.push([Number(item.latitude), Number(item.longitude)])
+  }
 
-    mapa.fitBounds(limites, { padding: [28, 28], maxZoom: 12 })
+  if (coordsLimites.length) {
+    const limites = L.latLngBounds(coordsLimites)
+    mapa.fitBounds(limites, { padding: [32, 32], maxZoom: 9 })
     return
   }
 
@@ -128,10 +142,49 @@ function ajustar() {
 }
 
 function desenhar() {
-  if (!mapa || !camadaPontos || !camadaValor) return
+  if (!mapa || !camadaPoligonos || !camadaPontos || !camadaValor) return
 
+  camadaPoligonos.clearLayers()
   camadaPontos.clearLayers()
   camadaValor.clearLayers()
+
+  for (const poly of props.poligonos || []) {
+    const coords = (poly?.coordenadas || []).filter(
+      (par) => Array.isArray(par) && coordenadaValida(par[0], par[1]),
+    )
+    if (coords.length < 3) continue
+
+    const corBorda = poly.cor || '#dc2626'
+    const corFill = poly.preenchimento || '#ef4444'
+    const opacidadeFill =
+      typeof poly.opacidade === 'number' ? poly.opacidade : 0.42
+
+    const poligonoLeaflet = L.polygon(coords, {
+      color: corBorda,
+      weight: 2,
+      opacity: 0.88,
+      fillColor: corFill,
+      fillOpacity: opacidadeFill,
+      smoothFactor: 1.5,
+      className: 'mapa-area-afetada',
+    })
+
+    if (poly.rotulo) {
+      const textoTooltip = poly.subtitulo
+        ? `<strong>${poly.rotulo}</strong><br/><span>${poly.subtitulo}</span>`
+        : `<strong>${poly.rotulo}</strong>`
+      poligonoLeaflet.bindTooltip(textoTooltip, {
+        sticky: true,
+        direction: 'top',
+      })
+    }
+
+    poligonoLeaflet.on('click', () => {
+      if (poly.aoClicar) poly.aoClicar(poly)
+    })
+
+    camadaPoligonos.addLayer(poligonoLeaflet)
+  }
 
   for (const item of props.pontos) {
     if (
@@ -203,6 +256,7 @@ function inicializar() {
       '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>',
   }).addTo(mapa)
 
+  camadaPoligonos = L.layerGroup().addTo(mapa)
   camadaPontos = L.layerGroup().addTo(mapa)
   camadaValor = L.layerGroup().addTo(mapa)
 
@@ -239,6 +293,14 @@ watch(
 )
 
 watch(
+  () => props.poligonos,
+  () => {
+    desenhar()
+  },
+  { deep: true },
+)
+
+watch(
   () => props.valor,
   () => {
     desenhar()
@@ -252,6 +314,7 @@ onBeforeUnmount(() => {
     mapa = null
   }
 
+  camadaPoligonos = null
   camadaPontos = null
   camadaValor = null
   escala = null
