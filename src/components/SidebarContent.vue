@@ -10,6 +10,7 @@ import {
   LogOut,
   MapPin,
   LifeBuoy,
+  Newspaper,
   PanelLeftClose,
   PanelLeftOpen,
 } from 'lucide-vue-next'
@@ -54,7 +55,7 @@ const links = [
   {
     nome: 'central',
     rotulo: 'Central ambiental',
-    icone: 'bi-newspaper',
+    icone: Newspaper,
   },
 ]
 
@@ -108,14 +109,6 @@ function ehAtivo(link) {
         <PanelLeftOpen v-if="recolhida" :size="16" aria-hidden="true" />
         <PanelLeftClose v-else :size="16" aria-hidden="true" />
       </Button>
-    </div>
-
-    <div class="workspace">
-      <p class="sidebar-label">Área de trabalho</p>
-      <div class="workspace-value">
-        <Grid2X2 :size="14" aria-hidden="true" />
-        <span>Observatório ambiental</span>
-      </div>
     </div>
 
     <p class="sidebar-label sidebar-label-nav">Monitoramento</p>
