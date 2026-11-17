@@ -16,6 +16,7 @@ import PageHeader from '@/components/PageHeader.vue'
 import { listarTodasOcorrencias } from '@/services/ocorrencias'
 import { useAuthStore } from '@/stores/auth'
 import { useDemoStore } from '@/stores/demo'
+import { useTemaStore } from '@/stores/tema'
 import { TIPOS, UFS } from '@/utils/constants'
 import {
   calcularIndicadores,
@@ -54,6 +55,7 @@ ChartJS.register(
 const hoje = dataHojeISO()
 const auth = useAuthStore()
 const demo = useDemoStore()
+const tema = useTemaStore()
 
 const filtros = reactive({
   tipo: '',
@@ -158,7 +160,7 @@ const dadosMensais = computed(() => ({
   ],
 }))
 
-const opcoesMensais = {
+const opcoesMensais = computed(() => ({
   responsive: true,
   maintainAspectRatio: false,
   interaction: { mode: 'index', intersect: false },
@@ -179,10 +181,10 @@ const opcoesMensais = {
     y: {
       beginAtZero: true,
       ticks: { precision: 0 },
-      grid: { color: 'rgba(38, 58, 48, 0.5)' },
+      grid: { color: tema.cor('--eco-chart-grid', 'rgba(38, 58, 48, 0.5)') },
     },
   },
-}
+}))
 
 const geradoEm = computed(() => formatarDataHora(new Date()))
 
@@ -534,7 +536,7 @@ onMounted(carregar)
         </p>
 
         <div v-if="mensal.labels.length" class="chart-box chart-box-sm">
-          <Bar :data="dadosMensais" :options="opcoesMensais" />
+          <Bar :key="tema.versao" :data="dadosMensais" :options="opcoesMensais" />
         </div>
         <p v-else class="report-subtitle">
           Não há datas válidas para montar a evolução mensal.
