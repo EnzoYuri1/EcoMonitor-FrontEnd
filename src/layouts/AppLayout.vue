@@ -7,7 +7,7 @@ import {
   watch,
 } from 'vue'
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
-import { Bell, Menu } from 'lucide-vue-next'
+import { Bell, Menu, Moon, Sun } from 'lucide-vue-next'
 
 import SidebarContent from '@/components/SidebarContent.vue'
 import AssistenteChat from '@/components/AssistenteChat.vue'
@@ -15,11 +15,13 @@ import { Button } from '@/components/ui/button'
 import { Sheet } from '@/components/ui/sheet'
 import { useAppStore } from '@/stores/app'
 import { useAuthStore } from '@/stores/auth'
+import { useTemaStore } from '@/stores/tema'
 
 const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
 const app = useAppStore()
+const tema = useTemaStore()
 
 const menuAberto = ref(false)
 const sidebarRecolhida = ref(false)
@@ -192,6 +194,23 @@ onBeforeUnmount(() => {
               </ul>
             </div>
           </div>
+
+          <button
+            type="button"
+            class="icon-btn tema-toggle"
+            :aria-label="
+              tema.atual === 'claro'
+                ? 'Ativar modo escuro'
+                : 'Ativar modo claro'
+            "
+            :title="
+              tema.atual === 'claro' ? 'Modo escuro' : 'Modo claro'
+            "
+            @click.stop="tema.alternar()"
+          >
+            <Moon v-if="tema.atual === 'claro'" :size="17" aria-hidden="true" />
+            <Sun v-else :size="17" aria-hidden="true" />
+          </button>
 
           <span class="timezone-chip" title="Horário de Brasília">
             BRT
