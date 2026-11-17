@@ -33,6 +33,7 @@ import { listarTodasOcorrencias } from '@/services/ocorrencias'
 import { useAppStore } from '@/stores/app'
 import { useAuthStore } from '@/stores/auth'
 import { useDemoStore } from '@/stores/demo'
+import { useTemaStore } from '@/stores/tema'
 import {
   calcularIndicadores,
   compararComMesAnterior,
@@ -61,6 +62,7 @@ const auth = useAuthStore()
 const router = useRouter()
 const demo = useDemoStore()
 const app = useAppStore()
+const tema = useTemaStore()
 
 const itens = ref([])
 const carregando = ref(true)
@@ -128,7 +130,7 @@ const dadosMensais = computed(() => ({
   ],
 }))
 
-const opcoesMensais = {
+const opcoesMensais = computed(() => ({
   responsive: true,
   maintainAspectRatio: false,
   interaction: { mode: 'index', intersect: false },
@@ -149,10 +151,10 @@ const opcoesMensais = {
     y: {
       beginAtZero: true,
       ticks: { precision: 0 },
-      grid: { color: 'rgba(38, 58, 48, 0.5)' },
+      grid: { color: tema.cor('--eco-chart-grid', 'rgba(38, 58, 48, 0.5)') },
     },
   },
-}
+}))
 
 const textoComparacao = computed(() => {
   const valor = comparacao.value
@@ -277,7 +279,7 @@ onMounted(carregar)
 
           <div class="panel-body">
             <div v-if="mensal.labels.length" class="chart-box">
-              <Bar :data="dadosMensais" :options="opcoesMensais" />
+              <Bar :key="tema.versao" :data="dadosMensais" :options="opcoesMensais" />
             </div>
             <p v-else class="chart-empty">
               Não há datas válidas para montar a evolução mensal.
