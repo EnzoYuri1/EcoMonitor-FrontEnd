@@ -6,11 +6,16 @@ import {
   FileChartColumn,
   LogIn,
   MapPin,
+  Moon,
+  Sun,
   TreePine,
   UserPlus,
 } from 'lucide-vue-next'
 
 import { Button } from '@/components/ui/button'
+import { useTemaStore } from '@/stores/tema'
+
+const tema = useTemaStore()
 
 const funcionalidades = [
   {
@@ -51,6 +56,18 @@ const funcionalidades = [
       </nav>
 
       <div class="landing-actions">
+        <button
+          type="button"
+          class="landing-tema-toggle"
+          :aria-label="
+            tema.atual === 'claro' ? 'Ativar modo escuro' : 'Ativar modo claro'
+          "
+          :title="tema.atual === 'claro' ? 'Modo escuro' : 'Modo claro'"
+          @click="tema.alternar()"
+        >
+          <Moon v-if="tema.atual === 'claro'" :size="16" aria-hidden="true" />
+          <Sun v-else :size="16" aria-hidden="true" />
+        </button>
         <Button variant="outline" size="sm" @click="$router.push({ name: 'login' })">
           <LogIn :size="14" aria-hidden="true" />
           Entrar
