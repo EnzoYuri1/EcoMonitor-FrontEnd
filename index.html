@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pt-BR" class="dark">
+<html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/logo-ecomonitor-original.png" />
@@ -9,6 +9,24 @@
       content="EcoMonitor: monitoramento de queimadas e desmatamento."
     />
     <title>EcoMonitor | Monitoramento ambiental</title>
+    <script>
+      // Aplica o tema salvo antes do primeiro paint (evita flash de tema
+      // errado). Padrão: claro. Sincroniza data-theme + classe .dark
+      // (Tailwind/shadcn) para o CSS pegar o tema desde o início.
+      ;(function () {
+        var tema = 'claro'
+        try {
+          if (localStorage.getItem('ecomonitor.tema') === 'escuro') {
+            tema = 'escuro'
+          }
+        } catch (e) {
+          /* localStorage indisponível: fica no padrão claro */
+        }
+        var raiz = document.documentElement
+        raiz.setAttribute('data-theme', tema)
+        raiz.classList.toggle('dark', tema === 'escuro')
+      })()
+    </script>
   </head>
   <body>
     <div id="app"></div>
