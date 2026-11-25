@@ -20,6 +20,7 @@ import {
   formatarHorario,
 } from '@/utils/format'
 import { formatarCoordenadas } from '@/utils/map'
+import { podeGerenciarOcorrencia } from '@/utils/permissoes'
 
 const route = useRoute()
 const auth = useAuthStore()
@@ -59,6 +60,10 @@ const valorMapa = computed(() => {
   if (!temCoordenadas.value) return null
   return [Number(ocorrencia.value.latitude), Number(ocorrencia.value.longitude)]
 })
+
+const podeEditar = computed(() =>
+  podeGerenciarOcorrencia(ocorrencia.value, auth.user),
+)
 
 const responsavel = computed(() =>
   Number(ocorrencia.value?.created_by) === Number(auth.userId)
@@ -149,7 +154,7 @@ onMounted(carregar)
             Ver no mapa
           </RouterLink>
           <RouterLink
-            v-if="Number(ocorrencia.created_by) === Number(auth.userId)"
+            v-if="podeEditar"
             class="btn btn-primary"
             :to="{ name: 'ocorrencias', query: { editar: ocorrencia.id } }"
           >
@@ -331,6 +336,13 @@ onMounted(carregar)
                 <div class="ficha-item">
                   <dt>Registrada em</dt>
                   <dd>{{ formatarDataHora(ocorrencia.created_at) }}</dd>
+                </div>
+                <div v-if="ocorrencia.updated_at" class="ficha-item">
+                  <dt>Última edição</dt>
+                  <dd>
+                    {{ ocorrencia.updated_by_nome || 'Usuário' }} em
+                    {{ formatarDataHora(ocorrencia.updated_at) }}
+                  </dd>
                 </div>
               </dl>
 

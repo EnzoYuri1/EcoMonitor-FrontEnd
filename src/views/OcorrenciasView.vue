@@ -38,6 +38,7 @@ import {
   formatarData,
   formatarNumero,
 } from '@/utils/format'
+import { podeGerenciarOcorrencia } from '@/utils/permissoes'
 import { gerarCsv } from '@/utils/reports'
 
 const auth = useAuthStore()
@@ -213,8 +214,8 @@ function limparFeedback() {
   mensagemSucesso.value = ''
 }
 
-function ehResponsavel(item) {
-  return Number(item?.created_by) === Number(auth.userId)
+function podeGerenciar(item) {
+  return podeGerenciarOcorrencia(item, auth.user)
 }
 
 function limparCampoEdicao(campo) {
@@ -515,7 +516,7 @@ onMounted(async () => {
     (ocorrencia) => String(ocorrencia.id) === String(idEdicao),
   )
 
-  if (item && ehResponsavel(item)) abrirEdicao(item)
+  if (item && podeGerenciar(item)) abrirEdicao(item)
 })
 
 onBeforeUnmount(() => {
@@ -735,7 +736,7 @@ onBeforeUnmount(() => {
                     <i class="bi bi-eye" aria-hidden="true"></i>
                   </RouterLink>
 
-                  <template v-if="ehResponsavel(item)">
+                  <template v-if="podeGerenciar(item)">
                     <button
                       type="button"
                       class="btn btn-sm btn-outline-primary"
@@ -759,7 +760,7 @@ onBeforeUnmount(() => {
                   <span
                     v-else
                     class="texto-3 small"
-                    title="Somente o responsável pode editar ou excluir."
+                    title="Somente o responsável ou um administrador pode editar ou excluir."
                   >
                     <i class="bi bi-lock" aria-hidden="true"></i>
                   </span>
@@ -791,8 +792,9 @@ onBeforeUnmount(() => {
         </div>
 
         <p class="texto-3 small mb-3">
-          Altere apenas os campos necessários. Somente o responsável pode
-          editar esta ocorrência.
+          Altere apenas os campos necessários. A edição fica registrada com o
+          seu nome. Somente o responsável ou um administrador pode alterar
+          esta ocorrência.
         </p>
 
         <form id="form-edicao" novalidate @submit.prevent="salvarEdicao">
