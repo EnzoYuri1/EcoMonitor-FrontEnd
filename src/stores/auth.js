@@ -31,6 +31,10 @@ export const useAuthStore = defineStore('auth', () => {
   const nomeUsuario = computed(() => user.value?.nome || '')
   const emailUsuario = computed(() => user.value?.email || '')
   const userId = computed(() => user.value?.id ?? null)
+  const perfilUsuario = computed(
+    () => user.value?.perfil || 'funcionario',
+  )
+  const isAdmin = computed(() => perfilUsuario.value === 'admin')
 
   function persistir() {
     if (token.value) {
@@ -179,6 +183,8 @@ export const useAuthStore = defineStore('auth', () => {
     nomeUsuario,
     emailUsuario,
     userId,
+    perfilUsuario,
+    isAdmin,
     hydrate,
     login,
     registrar,

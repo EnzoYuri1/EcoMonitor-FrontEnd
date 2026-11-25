@@ -190,6 +190,48 @@ describe('ensureSession', () => {
   })
 })
 
+describe('perfil de acesso', () => {
+  it('assume funcionário quando o perfil não vem na sessão', () => {
+    const store = criarStore()
+    store.user = USUARIO
+
+    expect(store.perfilUsuario).toBe('funcionario')
+    expect(store.isAdmin).toBe(false)
+  })
+
+  it('identifica administrador a partir do usuário carregado', async () => {
+    authService.obterUsuarioAtual.mockResolvedValue({
+      ...USUARIO,
+      perfil: 'admin',
+    })
+
+    const store = criarStore()
+    store.token = 'token-valido'
+    store.expiresAt = Date.now() + 60000
+
+    await store.ensureSession()
+
+    expect(store.perfilUsuario).toBe('admin')
+    expect(store.isAdmin).toBe(true)
+  })
+
+  it('reflete a mudança de perfil ao consultar o usuário novamente', async () => {
+    authService.obterUsuarioAtual
+      .mockResolvedValueOnce({ ...USUARIO, perfil: 'funcionario' })
+      .mockResolvedValueOnce({ ...USUARIO, perfil: 'admin' })
+
+    const store = criarStore()
+    store.token = 'token-valido'
+    store.expiresAt = Date.now() + 60000
+
+    await store.fetchMe()
+    expect(store.isAdmin).toBe(false)
+
+    await store.fetchMe()
+    expect(store.isAdmin).toBe(true)
+  })
+})
+
 describe('logout e mensagem de sessão', () => {
   it('limpa todos os dados da sessão', () => {
     const store = criarStore()
