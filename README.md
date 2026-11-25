@@ -68,7 +68,8 @@ EcoMonitor-Frontend-Vue/
 │   │   ├── assistente.js
 │   │   ├── auth.js
 │   │   ├── ocorrencias.js
-│   │   └── stats.js
+│   │   ├── stats.js
+│   │   └── usuarios.js
 │   ├── stores/
 │   │   └── auth.js
 │   ├── utils/
@@ -76,6 +77,7 @@ EcoMonitor-Frontend-Vue/
 │   │   ├── constants.js
 │   │   ├── format.js
 │   │   ├── map.js
+│   │   ├── permissoes.js
 │   │   ├── reports.js
 │   │   └── storage.js
 │   └── views/
@@ -86,13 +88,16 @@ EcoMonitor-Frontend-Vue/
 │       ├── NovaOcorrenciaView.vue
 │       ├── OcorrenciasView.vue
 │       ├── RegisterView.vue
-│       └── RelatoriosView.vue
+│       ├── RelatoriosView.vue
+│       └── UsuariosView.vue
 └── tests/
     ├── api.spec.js
     ├── assistente.spec.js
     ├── auth.spec.js
+    ├── central.spec.js
     ├── format.spec.js
     ├── map.spec.js
+    ├── permissoes.spec.js
     └── reports.spec.js
 ```
 
@@ -231,7 +236,9 @@ e `public/evidence-amazonia.jpg`.
 - Modal de detalhes da ocorrência.
 - Edição parcial com `PATCH`, enviando somente os campos alterados.
 - Exclusão com confirmação.
-- Edição e exclusão disponíveis apenas para o responsável.
+- Edição e exclusão disponíveis para o responsável ou para um administrador.
+- Tela **Usuários** (somente admin): lista contas e permite promover ou
+  rebaixar o perfil. O backend valida a permissão mesmo fora da tela.
 - Formulário de nova ocorrência com:
   - tipo, município, UF, descrição e data;
   - data máxima igual a hoje;
@@ -284,6 +291,7 @@ e `public/evidence-amazonia.jpg`.
 | `/app/ocorrencias/nova` | Nova ocorrência | Autenticada |
 | `/app/mapa` | Mapa interativo das ocorrências | Autenticada |
 | `/app/relatorios` | Relatórios consolidados e exportação CSV | Autenticada |
+| `/app/usuarios` | Gestão de perfis das contas | Autenticada + admin |
 
 Os caminhos antigos `/dashboard`, `/ocorrencias`, `/ocorrencias/nova`,
 `/ocorrencias/:id`, `/mapa` e `/relatorios` permanecem como redirecionamentos
@@ -297,9 +305,12 @@ apresentação pública.
 - Se o token estiver expirado ou a API retornar `401`, a sessão é limpa e o
   usuário volta ao login com uma mensagem.
 - Qualquer usuário autenticado pode listar e consultar ocorrências.
-- Somente o usuário que criou a ocorrência (`created_by`) pode editá-la ou
-  excluí-la. A interface esconde as ações e o backend também bloqueia com
-  `403`.
+- O perfil vem do backend (`/auth/me`) como `admin` ou `funcionario`.
+- Funcionários editam e excluem apenas as próprias ocorrências.
+- Administradores editam e excluem qualquer ocorrência, veem o menu
+  **Usuários** e podem promover ou rebaixar contas.
+- A interface esconde as ações sem permissão e o backend também bloqueia com
+  `403`; a regra real nunca depende só da tela.
 
 ## Tratamento de erros
 
@@ -329,6 +340,8 @@ técnicos crus para o usuário.
 - `GET /api/v1/ocorrencias/{id}`
 - `PATCH /api/v1/ocorrencias/{id}`
 - `DELETE /api/v1/ocorrencias/{id}`
+- `GET /api/v1/usuarios` (admin)
+- `PATCH /api/v1/usuarios/{id}/perfil` (admin)
 - `POST /api/v1/assistente`
 - `GET /health` (fora de `/api/v1`)
 
@@ -349,7 +362,9 @@ Os testes não dependem do backend rodando:
 - `tests/api.spec.js` valida o interceptor de token e o tratamento de `401`,
   `409`, `422`, timeout e erro de conexão com adaptador Axios simulado.
 - `tests/auth.spec.js` valida hydrate, login, expiração, `ensureSession`,
-  logout e mensagem de sessão.
+  logout, mensagem de sessão e perfis `admin`/`funcionario`.
+- `tests/permissoes.spec.js` valida a regra de edição: responsável, funcionário
+  sem permissão e administrador.
 - `tests/map.spec.js` valida coordenadas, limites, contagem por tipo, escape
   de HTML e conteúdo dos popups.
 - `tests/reports.spec.js` valida resumo, agrupamento por município, evolução

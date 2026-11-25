@@ -27,7 +27,7 @@ const SUGESTOES = [
   'Qual a diferença entre queimada e desmatamento?',
   'Quais regras devo respeitar nos campos?',
   'Como interpretar as estatísticas do dashboard?',
-  'Por que só eu posso editar minhas ocorrências?',
+  'Por que não consigo editar a ocorrência de um colega?',
 ]
 
 const aberto = ref(false)
