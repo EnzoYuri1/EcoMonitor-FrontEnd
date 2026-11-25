@@ -13,9 +13,11 @@ import {
   Newspaper,
   PanelLeftClose,
   PanelLeftOpen,
+  Users,
 } from 'lucide-vue-next'
 
 import { DOCS_URL } from '@/config'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { useAuthStore } from '@/stores/auth'
 
@@ -31,33 +33,45 @@ defineEmits(['navigate', 'sair', 'alternar'])
 const route = useRoute()
 const auth = useAuthStore()
 
-const links = [
-  {
-    nome: 'visao-geral',
-    rotulo: 'Visão geral',
-    icone: Grid2X2,
-  },
-  {
-    nome: 'mapa',
-    rotulo: 'Mapa de monitoramento',
-    icone: MapPin,
-  },
-  {
-    nome: 'ocorrencias',
-    rotulo: 'Ocorrências',
-    icone: ListChecks,
-  },
-  {
-    nome: 'relatorios',
-    rotulo: 'Relatórios',
-    icone: FileChartColumn,
-  },
-  {
-    nome: 'central',
-    rotulo: 'Central ambiental',
-    icone: Newspaper,
-  },
-]
+const links = computed(() => {
+  const itens = [
+    {
+      nome: 'visao-geral',
+      rotulo: 'Visão geral',
+      icone: Grid2X2,
+    },
+    {
+      nome: 'mapa',
+      rotulo: 'Mapa de monitoramento',
+      icone: MapPin,
+    },
+    {
+      nome: 'ocorrencias',
+      rotulo: 'Ocorrências',
+      icone: ListChecks,
+    },
+    {
+      nome: 'relatorios',
+      rotulo: 'Relatórios',
+      icone: FileChartColumn,
+    },
+    {
+      nome: 'central',
+      rotulo: 'Central ambiental',
+      icone: Newspaper,
+    },
+  ]
+
+  if (auth.isAdmin) {
+    itens.push({
+      nome: 'usuarios',
+      rotulo: 'Usuários',
+      icone: Users,
+    })
+  }
+
+  return itens
+})
 
 const iniciais = computed(() => {
   const nome = (auth.nomeUsuario || 'Marina Costa').trim()
@@ -153,8 +167,19 @@ function ehAtivo(link) {
       <div class="sidebar-profile">
         <span class="avatar" aria-hidden="true">{{ iniciais }}</span>
         <div class="sidebar-profile-texto">
-          <p class="sidebar-profile-nome">{{ nomeExibicao }}</p>
-          <small class="sidebar-profile-cargo">Analista ambiental</small>
+          <p class="sidebar-profile-nome">
+            {{ nomeExibicao }}
+            <Badge
+              v-if="auth.isAdmin"
+              variant="secondary"
+              class="sidebar-profile-badge"
+            >
+              Admin
+            </Badge>
+          </p>
+          <small class="sidebar-profile-cargo">
+            {{ auth.isAdmin ? 'Administrador' : 'Analista ambiental' }}
+          </small>
         </div>
         <Button
           type="button"

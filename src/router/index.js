@@ -80,6 +80,12 @@ const routes = [
         component: () => import('../views/CentralAmbientalView.vue'),
         meta: { title: 'Central de Informações Ambientais' },
       },
+      {
+        path: 'usuarios',
+        name: 'usuarios',
+        component: () => import('../views/UsuariosView.vue'),
+        meta: { title: 'Usuários', requiresAdmin: true },
+      },
     ],
   },
   {
@@ -142,6 +148,10 @@ router.beforeEach(async (to) => {
         name: 'login',
         query: { redirect: to.fullPath },
       }
+    }
+
+    if (to.meta.requiresAdmin && !auth.isAdmin) {
+      return { name: 'visao-geral' }
     }
   }
 
