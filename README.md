@@ -1,392 +1,344 @@
-# EcoMonitor Frontend (Vue 3)
+# EcoMonitor Frontend
 
-Interface web do EcoMonitor para registro, consulta e visualização de
-ocorrências de queimadas e desmatamento. O projeto consome exclusivamente a
-API real do backend FastAPI na área autenticada, sem mocks ou arquivos CSV
-para alimentar as telas operacionais. A apresentação pública possui prévias
-visuais explicitamente demonstrativas para explicar o produto sem depender de
-uma sessão ou de ocorrências reais.
+Interface web do **EcoMonitor**, plataforma de registro, consulta e análise de
+ocorrências de queimadas e desmatamento. Construída com Vue 3 e Vite, consome a
+API REST do backend FastAPI e inclui uma Central de Informações Ambientais
+(notícias, artigos científicos e monitoramento oficial), mapa interativo,
+relatórios exportáveis, gestão de perfis e um assistente de IA.
 
-Frontend em **Vue 3 + Vite + Bootstrap 5** para o EcoMonitor.
+## Sumário
 
-## Stack
+- [Visão geral](#visão-geral)
+- [Stack tecnológica](#stack-tecnológica)
+- [Requisitos](#requisitos)
+- [Início rápido](#início-rápido)
+- [Configuração](#configuração)
+- [Scripts disponíveis](#scripts-disponíveis)
+- [Estrutura do projeto](#estrutura-do-projeto)
+- [Funcionalidades](#funcionalidades)
+- [Rotas](#rotas)
+- [Autenticação e perfis de acesso](#autenticação-e-perfis-de-acesso)
+- [Dados demonstrativos](#dados-demonstrativos)
+- [API consumida](#api-consumida)
+- [Tratamento de erros](#tratamento-de-erros)
+- [Testes](#testes)
+- [Build e publicação](#build-e-publicação)
+- [Solução de problemas](#solução-de-problemas)
 
-- Vue 3 com Composition API e `<script setup>`
-- Vite
-- Vue Router
-- Pinia
-- Axios
-- Bootstrap 5 e Bootstrap Icons
-- shadcn-vue (componentes locais com Reka UI, Tailwind CSS e Lucide)
-- Chart.js com `vue-chartjs`
-- Leaflet com tiles do OpenStreetMap
-- Vitest e `@vue/test-utils` para testes
+## Visão geral
+
+| Área | Descrição |
+|---|---|
+| Pública | Landing page, Central de Informações Ambientais, login e cadastro |
+| Autenticada | Dashboard, ocorrências, mapa, relatórios, central e assistente de IA |
+| Administrativa | Gestão de usuários e perfis (somente `admin`) |
+
+As telas operacionais usam exclusivamente a API real, sem mocks ou CSV. Os
+únicos dados simulados são metadados visuais claramente identificados como
+demonstrativos (ver [Dados demonstrativos](#dados-demonstrativos)).
+
+## Stack tecnológica
+
+- **Vue 3** (Composition API, `<script setup>`) e **Vite**
+- **Vue Router** e **Pinia**
+- **Axios** com interceptors de autenticação e erros
+- **Tailwind CSS 4**, **shadcn-vue** (Reka UI, class-variance-authority) e
+  **Lucide** para ícones
+- **Chart.js** com `vue-chartjs`
+- **Leaflet** com tiles do OpenStreetMap
+- **VueUse** para utilitários reativos
+- **Vitest**, `@vue/test-utils` e `jsdom` para testes
 
 ## Requisitos
 
 - Node.js 20.19+ ou 22.12+ (recomendado 22+)
 - npm
-- Backend do EcoMonitor rodando em `http://127.0.0.1:8000`
+- Backend do EcoMonitor em execução (padrão: `http://127.0.0.1:8000`)
 
-## Estrutura
-
-```text
-EcoMonitor-Frontend-Vue/
-├── index.html
-├── package.json
-├── vite.config.js
-├── .env.example
-├── .gitignore
-├── README.md
-├── public/
-│   ├── evidence-amazonia.jpg
-│   ├── hero-amazonia.jpg
-│   ├── logo-ecomonitor-original.png
-│   └── favicon.svg
-├── src/
-│   ├── main.js
-│   ├── App.vue
-│   ├── config.js
-│   ├── assets/
-│   │   ├── styles.css
-│   ├── components/
-│   │   ├── AssistenteChat.vue
-│   │   ├── AuthShell.vue
-│   │   ├── BaseModal.vue
-│   │   ├── ConfirmDialog.vue
-│   │   ├── EmptyState.vue
-│   │   ├── KpiCard.vue
-│   │   ├── Pagination.vue
-│   │   ├── SidebarContent.vue
-│   │   └── TipoBadge.vue
-│   ├── layouts/
-│   │   └── AppLayout.vue
-│   ├── router/
-│   │   └── index.js
-│   ├── services/
-│   │   ├── api.js
-│   │   ├── assistente.js
-│   │   ├── auth.js
-│   │   ├── ocorrencias.js
-│   │   ├── stats.js
-│   │   └── usuarios.js
-│   ├── stores/
-│   │   └── auth.js
-│   ├── utils/
-│   │   ├── assistente.js
-│   │   ├── constants.js
-│   │   ├── format.js
-│   │   ├── map.js
-│   │   ├── permissoes.js
-│   │   ├── reports.js
-│   │   └── storage.js
-│   └── views/
-│       ├── LandingView.vue
-│       ├── DashboardView.vue
-│       ├── LoginView.vue
-│       ├── MapaView.vue
-│       ├── NovaOcorrenciaView.vue
-│       ├── OcorrenciasView.vue
-│       ├── RegisterView.vue
-│       ├── RelatoriosView.vue
-│       └── UsuariosView.vue
-└── tests/
-    ├── api.spec.js
-    ├── assistente.spec.js
-    ├── auth.spec.js
-    ├── central.spec.js
-    ├── format.spec.js
-    ├── map.spec.js
-    ├── permissoes.spec.js
-    └── reports.spec.js
-```
-
-## Instalação
+## Início rápido
 
 ```powershell
-cd C:\Users\desenvolvimento4\EcoMonitor-Frontend-Vue
+# 1. Instalar dependências
 npm install
+
+# 2. (Opcional) criar o arquivo de ambiente
 Copy-Item .env.example .env
-```
 
-O arquivo `.env` é opcional no desenvolvimento, pois o valor padrão já aponta
-para o proxy local:
-
-```env
-VITE_API_URL=/api/v1
-```
-
-## Iniciar o backend
-
-Em outro terminal:
-
-```powershell
+# 3. Iniciar o backend em outro terminal
 cd C:\Users\desenvolvimento4\EcoMonitor-Backend
 .\.venv\Scripts\python.exe -m uvicorn app.main:app --reload
+
+# 4. Iniciar o frontend
+npm run dev
 ```
 
-Verifique:
+Acesse `http://localhost:5173`. Para validar o backend:
 
 - API: `http://127.0.0.1:8000`
 - Saúde: `http://127.0.0.1:8000/health`
 - Documentação: `http://127.0.0.1:8000/docs`
 
-## Iniciar o frontend
+## Configuração
 
-```powershell
-npm run dev
-```
+### Variáveis de ambiente
 
-Acesse `http://localhost:5173`.
+| Variável | Padrão | Descrição |
+|---|---|---|
+| `VITE_API_URL` | `/api/v1` | URL base da API. Em desenvolvimento, use o caminho relativo (proxy do Vite) |
+| `VITE_DOCS_URL` | derivada da API | Link da documentação exibido na interface |
 
-O Vite encaminha as chamadas de `/api` e `/health` para
-`http://127.0.0.1:8000`. Como o navegador conversa apenas com a origem do
-frontend, **não é necessário configurar CORS no desenvolvimento**.
-
-## Proxy e CORS
-
-O proxy está em `vite.config.js` e vale para `npm run dev` e
-`npm run preview`:
-
-```js
-const proxy = {
-  '/api': {
-    target: 'http://127.0.0.1:8000',
-    changeOrigin: true,
-  },
-  '/health': {
-    target: 'http://127.0.0.1:8000',
-    changeOrigin: true,
-  },
-}
-
-export default defineConfig({
-  server: { port: 5173, proxy },
-  preview: { port: 4173, proxy },
-})
-```
-
-Em produção, o frontend não usa o proxy do Vite. Configure a URL completa da
-API no `.env` antes do build:
+O `.env` é opcional em desenvolvimento. Em produção, informe a URL completa:
 
 ```env
 VITE_API_URL=https://seu-dominio.com/api/v1
 VITE_DOCS_URL=https://seu-dominio.com/docs
 ```
 
-Depois, adicione a origem do frontend em `CORS_ORIGINS` no `.env` do backend,
-separando múltiplas origens por vírgula:
+### Proxy e CORS
+
+O `vite.config.js` encaminha `/api` e `/health` para `http://127.0.0.1:8000`
+em `npm run dev` (porta 5173) e `npm run preview` (porta 4173). Como o
+navegador fala apenas com a origem do frontend, **não é necessário configurar
+CORS em desenvolvimento**.
+
+Em produção não há proxy: adicione a origem do frontend em `CORS_ORIGINS` no
+`.env` do backend (valores separados por vírgula) e reinicie-o:
 
 ```env
 CORS_ORIGINS=http://localhost:5173,https://seu-frontend.com
 ```
 
-O backend precisa ser reiniciado após alterar o `.env`. O proxy do Vite vale
-somente para `npm run dev`; o build gera arquivos estáticos em `dist/`.
+## Scripts disponíveis
 
-Para publicar o build:
+| Comando | Descrição |
+|---|---|
+| `npm run dev` | Servidor de desenvolvimento com HMR |
+| `npm run build` | Gera o build de produção em `dist/` |
+| `npm run preview` | Serve o build localmente |
+| `npm run test` | Executa a suíte de testes uma vez |
+| `npm run test:watch` | Executa os testes em modo observação |
 
-```powershell
-npm run build
-npm run preview
+O arquivo `scripts-sidebar.mjs` é um script auxiliar de verificação visual da
+barra lateral com Playwright e Edge; não faz parte do build.
+
+## Estrutura do projeto
+
+```text
+EcoMonitor-Frontend-Vue/
+├── index.html
+├── package.json
+├── vite.config.js
+├── components.json            # configuração shadcn-vue
+├── jsconfig.json
+├── .env.example
+├── public/                    # imagens da Amazônia, logo e favicon
+├── src/
+│   ├── main.js
+│   ├── App.vue
+│   ├── config.js              # URLs da API, saúde, documentação e timeout
+│   ├── assets/                # estilos globais (styles.css)
+│   ├── lib/utils.js           # helper cn() do shadcn
+│   ├── layouts/
+│   │   └── AppLayout.vue      # shell da área autenticada
+│   ├── router/index.js        # rotas e guards
+│   ├── stores/                # Pinia
+│   │   ├── auth.js            # sessão, perfil e permissões
+│   │   ├── app.js             # notificações e última atualização
+│   │   ├── demo.js            # status demonstrativo das ocorrências
+│   │   └── tema.js            # tema claro/escuro
+│   ├── services/              # camada de acesso à API
+│   │   ├── api.js             # cliente Axios e normalização de erros
+│   │   ├── auth.js
+│   │   ├── ocorrencias.js
+│   │   ├── stats.js
+│   │   ├── usuarios.js
+│   │   ├── central.js
+│   │   └── assistente.js
+│   ├── utils/
+│   │   ├── assistente.js      # histórico do chat
+│   │   ├── constants.js
+│   │   ├── demo.js            # metadados demonstrativos determinísticos
+│   │   ├── format.js
+│   │   ├── map.js
+│   │   ├── noticiaImpacto.js  # regiões de impacto e pontos de notícias
+│   │   ├── permissoes.js
+│   │   ├── reports.js
+│   │   └── storage.js
+│   ├── components/
+│   │   ├── ui/                # primitivos shadcn-vue (badge, button, card,
+│   │   │                      #   checkbox, input, scroll-area, select,
+│   │   │                      #   separator, sheet, textarea)
+│   │   ├── AssistenteChat.vue
+│   │   ├── ArtigoCard.vue
+│   │   ├── AuthShell.vue
+│   │   ├── BaseModal.vue
+│   │   ├── ConfirmDialog.vue
+│   │   ├── EmptyState.vue
+│   │   ├── KpiCard.vue
+│   │   ├── MiniMapa.vue
+│   │   ├── NoticiaCard.vue
+│   │   ├── NoticiaImpactoModal.vue
+│   │   ├── PageHeader.vue
+│   │   ├── Pagination.vue
+│   │   ├── SeverityBadge.vue
+│   │   ├── SidebarContent.vue
+│   │   ├── StatusBadge.vue
+│   │   └── TipoBadge.vue
+│   └── views/
+│       ├── LandingView.vue
+│       ├── LoginView.vue
+│       ├── RegisterView.vue
+│       ├── CentralAmbientalView.vue
+│       ├── DashboardView.vue
+│       ├── OcorrenciasView.vue
+│       ├── NovaOcorrenciaView.vue
+│       ├── OcorrenciaDetalheView.vue
+│       ├── MapaView.vue
+│       ├── RelatoriosView.vue
+│       └── UsuariosView.vue
+└── tests/                     # api, assistente, auth, central, format, map,
+                               #   permissoes e reports
 ```
 
-Ao servir o `dist/` em produção, configure o servidor estático para devolver
-`index.html` em rotas desconhecidas (fallback de SPA), pois o Vue Router usa
-`history` mode.
+## Funcionalidades
 
-## Apresentação pública e identidade visual
+### Área pública
 
-- Landing page pública em `/`, sem sidebar da área autenticada.
-- Cabeçalho com navegação para funcionalidades e fluxo de uso, além das ações
-  de login e criação de conta.
-- Hero e seção de registros com imagens da Amazônia em composição responsiva.
-- Login e cadastro compartilham o `AuthShell.vue` com composição responsiva.
-- Tema escuro em preto e cinza, com superfícies grafite, bordas discretas,
-  componentes shadcn como padrão e foco neutro visível.
-- Componentes shadcn-vue são usados para botões, cards, formulários, badges,
-  modais, navegação e estados interativos. Bootstrap foi removido.
-- As informações da landing, como `128` ocorrências e `3.842 ha`, são
-  ilustrativas e não representam dados retornados pela API.
+- **Landing page** com apresentação do produto, navegação por seções e
+  chamadas para login e cadastro. Os números exibidos (como `128` ocorrências
+  e `3.842 ha`) são ilustrativos.
+- **Central de Informações Ambientais** acessível sem login (`/central`).
+- **Login e cadastro** em layout compartilhado (`AuthShell`), com login
+  automático após o registro.
 
-As imagens públicas da Amazônia usadas na landing ficam em `public/hero-amazonia.jpg`
-e `public/evidence-amazonia.jpg`.
+### Central de Informações Ambientais
 
-## Funcionalidades da área autenticada
+Disponível na área pública e na área autenticada, organizada em abas:
 
-- Login e cadastro de usuários contra a API real.
-- Login automático após o cadastro.
-- Sessão com JWT em `sessionStorage`, expiração e validação via `/auth/me`.
-- Interceptor Axios que envia `Authorization: Bearer <token>`.
-- Logout e redirecionamento automático em caso de `401`.
-- Dashboard com indicadores globais:
-  - total de ocorrências;
-  - queimadas;
-  - desmatamentos;
-  - municípios monitorados.
-- Gráfico de rosca por tipo.
-- Gráfico de barras com os 10 municípios com mais ocorrências.
-- Evolução mensal calculada sobre todas as ocorrências cadastradas.
-- Estado vazio quando o banco não possui ocorrências.
-- Listagem paginada com filtros server-side por:
-  - tipo;
-  - município (select alimentado por `/stats`);
-  - período inicial e final;
-  - itens por página (10, 20, 50 ou 100).
-- Modal de detalhes da ocorrência.
-- Edição parcial com `PATCH`, enviando somente os campos alterados.
-- Exclusão com confirmação.
-- Edição e exclusão disponíveis para o responsável ou para um administrador.
-- Tela **Usuários** (somente admin): lista contas e permite promover ou
-  rebaixar o perfil. O backend valida a permissão mesmo fora da tela.
-- Formulário de nova ocorrência com:
-  - tipo, município, UF, descrição e data;
-  - data máxima igual a hoje;
-  - coordenadas opcionais;
-  - sugestões de municípios já cadastrados.
-- Mapa interativo com Leaflet e tiles do OpenStreetMap:
-  - filtros server-side por tipo, município e período;
-  - marcadores diferenciados por tipo, mantendo a semântica visual do mapa;
-  - popups com tipo, município/UF, data, coordenadas e descrição;
-  - legenda com contagem por tipo;
-  - ajuste automático aos marcadores e botão para centralizar no Brasil;
-  - carregamento de todas as páginas da API;
-  - estados de carregamento, vazio e API offline;
-  - ocorrências sem coordenadas ou fora do território brasileiro são
-    contabilizadas no rodapé e não aparecem no mapa.
-- Relatórios consolidados calculados no frontend sobre `/ocorrencias` e
-  `/stats`:
-  - filtros por tipo, município e período;
-  - indicadores de total, queimadas, desmatamentos e municípios atingidos;
-  - período analisado e evolução mensal empilhada por tipo;
-  - gráfico dos 10 municípios com mais ocorrências;
-  - tabela-resumo por município com queimadas, desmatamentos, total e
-    participação;
-  - exportação CSV detalhada das ocorrências e resumo por município;
-  - estados de carregamento, vazio, validação do período e API offline.
-- Indicador de saúde da API no menu, consultando `/health`.
-- Assistente de IA gratuito via OpenRouter (botão flutuante em todas as telas
-  autenticadas):
-  - painel de chat com sugestões de perguntas, indicador de digitação e
-    mensagens de erro amigáveis;
-  - histórico em `sessionStorage` (some ao fechar a aba) e botão para limpar
-    a conversa;
-  - mensagens de até 1.000 caracteres com contador;
-  - timeout próprio de 45 segundos para a resposta da IA;
-  - aviso permanente de que o assistente pode cometer erros e apenas orienta,
-    sem alterar dados nem substituir avaliação técnica/legal.
-- Layout responsivo: sidebar fixa no desktop e menu lateral no mobile.
-- Identidade visual em preto, grafite e cinza, com verde pontual nos botões
-  primários e estados positivos, baseada no tema escuro do shadcn-vue.
+- **Início**: destaques consolidados.
+- **Notícias**: listagem paginada com filtro por categoria, busca por termo e
+  ordenação; cada card mostra veículo, data de publicação, data de coleta e
+  link original.
+- **Artigos científicos**: filtro por base, busca e ordenação, com autores,
+  periódico, DOI e citações.
+- **Monitoramento oficial**: indicadores por estado, métrica e recorte da
+  Amazônia.
+- **Busca** unificada entre os conteúdos.
+- **Impacto territorial**: notícias com localização são cruzadas com regiões
+  afetadas e dados do INPE, exibindo um modal com mini mapa.
+- **Atualização manual** das fontes, disponível para administradores.
+
+### Dashboard (Visão geral)
+
+- Indicadores globais: total, queimadas, desmatamentos e municípios
+  monitorados.
+- Gráfico de rosca por tipo, barras dos 10 municípios com mais ocorrências e
+  evolução mensal calculada sobre todas as ocorrências.
+- Estado vazio com atalho para cadastrar a primeira ocorrência.
+
+### Ocorrências
+
+- Listagem paginada (10, 20, 50 ou 100 itens) com filtros server-side por
+  tipo, município e período.
+- Página de **detalhe** com mini mapa, severidade, status, histórico e
+  metadados demonstrativos.
+- **Nova ocorrência**: tipo, município, UF, descrição, data (máximo hoje),
+  coordenadas opcionais e sugestões de municípios já cadastrados.
+- Edição parcial com `PATCH` (apenas campos alterados) e exclusão com
+  confirmação, conforme as [permissões](#autenticação-e-perfis-de-acesso).
+
+### Mapa
+
+- Leaflet com OpenStreetMap, filtros por tipo, município e período.
+- Marcadores diferenciados por tipo, popups detalhados e legenda com
+  contagem.
+- Ajuste automático aos marcadores e botão para centralizar no Brasil.
+- Carrega todas as páginas da API; registros sem coordenadas válidas ou fora
+  do território brasileiro são contabilizados no rodapé.
+
+### Relatórios
+
+- Filtros por tipo, município e período.
+- Indicadores, período analisado, evolução mensal empilhada por tipo,
+  ranking de municípios e tabela-resumo com participação percentual.
+- **Exportação CSV** detalhada e resumo por município.
+
+### Gestão de usuários (admin)
+
+- Lista de contas com promoção e rebaixamento de perfil.
+
+### Assistente de IA
+
+- Botão flutuante em todas as telas autenticadas, via OpenRouter.
+- Sugestões de perguntas, indicador de digitação e erros amigáveis.
+- Histórico em `sessionStorage` (limitado a 24 mensagens) e botão de limpar.
+- Mensagens de até 1.000 caracteres, timeout próprio de 45 s.
+- Aviso permanente: o assistente apenas orienta, não altera dados.
+
+### Interface
+
+- Tema **claro e escuro** com persistência em `localStorage`.
+- Sidebar recolhível no desktop e menu lateral no mobile.
+- Indicador de saúde da API (`/health`) e central de notificações.
+- Selo de perfil de administrador na barra lateral.
 
 ## Rotas
 
 | Rota | Tela | Proteção |
 |---|---|---|
-| `/` | Apresentação pública | Pública |
-| `/login` | Login | Pública |
-| `/cadastro` | Criar conta | Pública |
+| `/` | Landing page | Pública |
+| `/central` | Central de Informações Ambientais | Pública |
+| `/login` | Login | Visitante |
+| `/cadastro` | Criar conta | Visitante |
 | `/app/visao-geral` | Dashboard | Autenticada |
 | `/app/ocorrencias` | Listagem e filtros | Autenticada |
 | `/app/ocorrencias/nova` | Nova ocorrência | Autenticada |
-| `/app/mapa` | Mapa interativo das ocorrências | Autenticada |
-| `/app/relatorios` | Relatórios consolidados e exportação CSV | Autenticada |
-| `/app/usuarios` | Gestão de perfis das contas | Autenticada + admin |
+| `/app/ocorrencias/:id` | Detalhe da ocorrência | Autenticada |
+| `/app/mapa` | Mapa interativo | Autenticada |
+| `/app/relatorios` | Relatórios e exportação CSV | Autenticada |
+| `/app/central` | Central de Informações Ambientais | Autenticada |
+| `/app/usuarios` | Gestão de perfis | Autenticada + admin |
 
-Os caminhos antigos `/dashboard`, `/ocorrencias`, `/ocorrencias/nova`,
-`/ocorrencias/:id`, `/mapa` e `/relatorios` permanecem como redirecionamentos
-de compatibilidade para a área `/app`. Rotas inexistentes retornam para a
-apresentação pública.
+Os caminhos legados (`/dashboard`, `/ocorrencias`, `/ocorrencias/nova`,
+`/ocorrencias/:id`, `/mapa`, `/relatorios`) redirecionam para `/app`. Rotas
+inexistentes voltam para a landing page. Usuários autenticados que acessam
+`/login` ou `/cadastro` são levados ao dashboard.
 
-## Autenticação e permissões
+## Autenticação e perfis de acesso
 
-- O token JWT fica em `sessionStorage` e é reconstruído ao recarregar a página.
-- A sessão é validada com `GET /auth/me` antes de liberar as rotas protegidas.
-- Se o token estiver expirado ou a API retornar `401`, a sessão é limpa e o
-  usuário volta ao login com uma mensagem.
-- Qualquer usuário autenticado pode listar e consultar ocorrências.
-- O perfil vem do backend (`/auth/me`) como `admin` ou `funcionario`.
-- Funcionários editam e excluem apenas as próprias ocorrências.
-- Administradores editam e excluem qualquer ocorrência, veem o menu
-  **Usuários** e podem promover ou rebaixar contas.
-- A interface esconde as ações sem permissão e o backend também bloqueia com
-  `403`; a regra real nunca depende só da tela.
+- JWT armazenado em `sessionStorage` e reconstruído ao recarregar a página.
+- Sessão validada com `GET /auth/me` antes de liberar rotas protegidas.
+- O interceptor Axios envia `Authorization: Bearer <token>`; um `401` limpa a
+  sessão e redireciona ao login com mensagem.
+- O perfil vem do backend como `admin` ou `funcionario`.
 
-## Tratamento de erros
+| Ação | Funcionário | Administrador |
+|---|---|---|
+| Listar e consultar ocorrências | Sim | Sim |
+| Criar ocorrência | Sim | Sim |
+| Editar/excluir ocorrência própria | Sim | Sim |
+| Editar/excluir ocorrência de terceiros | Não | Sim |
+| Acessar **Usuários** e alterar perfis | Não | Sim |
+| Atualizar fontes da Central | Não | Sim |
 
-As mensagens são normalizadas em `src/services/api.js`:
+A interface oculta as ações sem permissão, e o backend também as bloqueia com
+`403`: a regra real nunca depende apenas da tela. O frontend não envia
+`created_by`; o responsável é definido pelo backend a partir do token.
 
-| Situação | Comportamento |
-|---|---|
-| `400` | Exibe a mensagem de período inválido da API |
-| `401` | Limpa a sessão e redireciona para o login |
-| `403` | Exibe mensagem de permissão negada |
-| `404` | Exibe recurso não encontrado |
-| `409` | Exibe conflito, como email já cadastrado |
-| `422` | Converte a lista de validação em mensagens legíveis |
-| API offline | Exibe mensagem amigável com instrução para iniciar o backend |
+## Dados demonstrativos
 
-O cliente Axios usa timeout de 10 segundos e nunca mostra traceback ou detalhes
-técnicos crus para o usuário.
+A API não possui os campos de **severidade**, **status**, **área**, **bioma**,
+**anexos** e **histórico**. Para compor a interface:
 
-## API consumida
+- `src/utils/demo.js` deriva esses valores de forma determinística a partir do
+  registro real.
+- `src/stores/demo.js` guarda alterações de status apenas no `localStorage`
+  do navegador, sem enviar requisições.
+- Todos os pontos são identificados como demonstrativos na interface e nada é
+  gravado no backend.
 
-- `POST /api/v1/auth/register`
-- `POST /api/v1/auth/login`
-- `GET /api/v1/auth/me`
-- `GET /api/v1/stats`
-- `GET /api/v1/ocorrencias`
-- `POST /api/v1/ocorrencias`
-- `GET /api/v1/ocorrencias/{id}`
-- `PATCH /api/v1/ocorrencias/{id}`
-- `DELETE /api/v1/ocorrencias/{id}`
-- `GET /api/v1/usuarios` (admin)
-- `PATCH /api/v1/usuarios/{id}/perfil` (admin)
-- `POST /api/v1/assistente`
-- `GET /health` (fora de `/api/v1`)
-
-O frontend não envia `created_by` no corpo: o backend define o responsável a
-partir do token. A atualização usa `PATCH`; `PUT` não é utilizado.
-
-## Testes e build
-
-```powershell
-npm run test
-npm run test:watch
-npm run build
-```
-
-Os testes não dependem do backend rodando:
-
-- `tests/format.spec.js` valida datas, números, rótulos, cores e responsável.
-- `tests/api.spec.js` valida o interceptor de token e o tratamento de `401`,
-  `409`, `422`, timeout e erro de conexão com adaptador Axios simulado.
-- `tests/auth.spec.js` valida hydrate, login, expiração, `ensureSession`,
-  logout, mensagem de sessão e perfis `admin`/`funcionario`.
-- `tests/permissoes.spec.js` valida a regra de edição: responsável, funcionário
-  sem permissão e administrador.
-- `tests/map.spec.js` valida coordenadas, limites, contagem por tipo, escape
-  de HTML e conteúdo dos popups.
-- `tests/reports.spec.js` valida resumo, agrupamento por município, evolução
-  mensal, descrição do período, percentuais e geração dos CSVs.
-- `tests/assistente.spec.js` valida o envio com histórico filtrado e limitado,
-  o `timeout` próprio, a propagação de erros amigáveis e o histórico em
-  `sessionStorage` (salvar, carregar, limitar a 24, ignorar corrompido e
-  limpar).
-
-O build de produção é gerado em `dist/`.
-
-## Dados fictícios (opcional)
-
-O frontend não possui mocks, CSV ou seed próprios: todas as telas consomem a
-API real. Se o banco estiver vazio, o dashboard mostra um estado vazio com um
-botão para cadastrar a primeira ocorrência.
-
-Para demonstrações, o backend possui o script opcional
-`scripts/seed_exemplos.py`, que cadastra 40 ocorrências fictícias
-(20 queimadas e 20 desmatamentos) distribuídas nos últimos 12 meses. Os
-registros recebem o prefixo `[exemplo]` na descrição e podem ser removidos sem
-afetar os dados reais:
+Para popular um banco vazio, o backend oferece o script opcional
+`scripts/seed_exemplos.py` (40 ocorrências com prefixo `[exemplo]`):
 
 ```powershell
 cd C:\Users\desenvolvimento4\EcoMonitor-Backend
@@ -394,70 +346,78 @@ cd C:\Users\desenvolvimento4\EcoMonitor-Backend
 .\.venv\Scripts\python.exe scripts\seed_exemplos.py --limpar
 ```
 
-O script não roda automaticamente; os dados só aparecem se ele for executado.
+## API consumida
 
-## Frontend Streamlit preservado
+Prefixo `/api/v1`, exceto `/health`.
 
-O projeto Streamlit existente em
-`C:\Users\desenvolvimento4\EcoMonitor-Frontend` não foi alterado nem removido.
-Ele pode continuar sendo usado como comparação ou fallback.
+| Domínio | Endpoints |
+|---|---|
+| Autenticação | `POST /auth/register`, `POST /auth/login`, `GET /auth/me` |
+| Estatísticas | `GET /stats` |
+| Ocorrências | `GET`, `POST /ocorrencias`; `GET`, `PATCH`, `DELETE /ocorrencias/{id}` |
+| Usuários (admin) | `GET /usuarios`, `PATCH /usuarios/{id}/perfil` |
+| Central | `GET /central/destaques`, `/central/noticias`, `/central/artigos`, `/central/monitoramento`, `/central/busca`, `/central/status`; `POST /central/atualizar` |
+| Assistente | `POST /assistente` |
+| Saúde | `GET /health` |
 
-## Checklist manual de integração
+A atualização de ocorrências usa `PATCH`; `PUT` não é utilizado.
 
-1. Inicie o backend e confirme `GET http://127.0.0.1:8000/health`.
-2. Inicie o frontend e acesse `http://localhost:5173`.
-3. Confira a apresentação pública em `/`, incluindo a prévia amazônica e a
-   seção de evidências demonstrativas.
-4. Acesse `/login` e `/cadastro`; confirme a imagem da Amazônia no painel
-   institucional e o layout responsivo.
-5. Crie uma conta em `/cadastro` e verifique o login automático.
-6. Confirme o estado vazio do dashboard quando não houver ocorrências.
-7. Cadastre uma ocorrência com e sem coordenadas.
-8. Confirme os indicadores, a rosca, as barras e a evolução mensal.
-9. Na listagem, filtre por tipo, município e período.
-10. Altere o tamanho da página e navegue com Anterior/Próxima.
-11. Abra os detalhes de uma ocorrência.
-12. Edite somente a descrição e confirme que o `PATCH` foi parcial.
-13. Exclua uma ocorrência e confirme a remoção da lista.
-14. Entre com outro usuário e confirme que as ações de edição/exclusão não
-    aparecem para ocorrências de terceiros.
-15. Acesse `/app/mapa` e confirme os marcadores, a legenda e o total exibido.
-16. Filtre o mapa por tipo, município e período.
-17. Use os botões "Ajustar" e "Brasil" e confira o enquadramento.
-18. Abra o popup de um marcador e confira tipo, local, data e coordenadas.
-19. Confirme a contagem de ocorrências sem coordenadas ou fora da área de
-    cobertura no rodapé do mapa.
-20. Acesse `/app/relatorios` e confira os indicadores, o período analisado, a
-    evolução mensal e o ranking de municípios.
-21. Filtre os relatórios por tipo, município e período e confirme que os
-    cards, gráficos e a tabela são recalculados.
-22. Exporte o CSV detalhado e o resumo por município, abra os arquivos no
-    Excel e confira acentuação, colunas e separador.
-23. Aplique um período sem ocorrências e confirme o estado vazio.
-24. Pare o backend e confirme as mensagens de API offline.
-25. Reinicie o backend, faça login e confirme que o indicador de saúde fica
-    cinza.
-26. Reduza `ACCESS_TOKEN_EXPIRE_MINUTES` no backend, aguarde a expiração e
-    confirme o retorno ao login.
-27. Abra o menu mobile e teste a navegação.
-28. Confirme que o link de documentação abre `http://127.0.0.1:8000/docs`.
+## Tratamento de erros
+
+As mensagens são normalizadas em `src/services/api.js`. O cliente usa timeout
+de 10 s e nunca exibe traceback ou detalhes técnicos ao usuário.
+
+| Situação | Comportamento |
+|---|---|
+| `400` | Mensagem de validação, como período inválido |
+| `401` | Limpa a sessão e redireciona ao login |
+| `403` | Permissão negada |
+| `404` | Recurso não encontrado |
+| `409` | Conflito, como e-mail já cadastrado |
+| `422` | Lista de validação convertida em mensagens legíveis |
+| API offline | Mensagem amigável com instrução para iniciar o backend |
+
+## Testes
+
+```powershell
+npm run test
+```
+
+A suíte não depende do backend em execução:
+
+| Arquivo | Cobertura |
+|---|---|
+| `api.spec.js` | Interceptor de token, `401`, `409`, `422`, timeout e erro de conexão |
+| `auth.spec.js` | Hydrate, login, expiração, `ensureSession`, logout e perfis |
+| `permissoes.spec.js` | Regra de edição: responsável, funcionário e administrador |
+| `format.spec.js` | Datas, números, rótulos, cores e responsável |
+| `map.spec.js` | Coordenadas, limites, contagem por tipo e popups |
+| `reports.spec.js` | Resumos, agrupamentos, evolução mensal, percentuais e CSV |
+| `assistente.spec.js` | Histórico filtrado e limitado, timeout, erros e `sessionStorage` |
+| `central.spec.js` | Serviço da Central, `NoticiaCard`, `ArtigoCard` e evento de impacto |
+
+## Build e publicação
+
+```powershell
+npm run build
+npm run preview
+```
+
+O build gera arquivos estáticos em `dist/`. Como o Vue Router usa `history`
+mode, configure o servidor para devolver `index.html` em rotas desconhecidas
+(fallback de SPA). Defina `VITE_API_URL` antes do build e ajuste o CORS no
+backend.
 
 ## Solução de problemas
 
-- **Mensagem de API offline**: verifique se o backend está rodando na porta
-  8000.
-- **Erro de CORS em produção**: adicione a origem do frontend em
-  `CORS_ORIGINS` e reinicie o backend.
-- **Rotas quebradas após publicar o build**: configure o fallback de SPA para
-  `index.html`.
-- **Login retorna para a tela inicial**: o token pode ter expirado; faça login
-  novamente.
-- **Filtro de município sem resultados**: a API é sensível a acentos; use a
-  opção preenchida pelo select de `/stats`.
-- **Mapa sem tiles**: o Leaflet usa os tiles públicos do OpenStreetMap;
-  verifique a conexão com a internet.
-- **Marcador ausente no mapa**: confira latitude e longitude. Pontos vazios,
-  inválidos ou fora do território brasileiro são contabilizados no rodapé e
-  não são plotados.
-- **Datas**: o frontend envia e recebe datas no formato `AAAA-MM-DD` e exibe
-  no formato `dd/mm/aaaa`.
+| Sintoma | Solução |
+|---|---|
+| Mensagem de API offline | Verifique se o backend está rodando na porta 8000 |
+| Erro de CORS em produção | Adicione a origem em `CORS_ORIGINS` e reinicie o backend |
+| Rotas quebradas após publicar | Configure o fallback de SPA para `index.html` |
+| Retorno ao login | O token expirou; autentique-se novamente |
+| Filtro de município sem resultados | A API é sensível a acentos; use a opção do select |
+| Mapa sem tiles | Verifique a conexão com os tiles do OpenStreetMap |
+| Marcador ausente no mapa | Confira latitude e longitude; pontos inválidos ou fora do Brasil não são plotados |
+| Menu **Usuários** ausente | Disponível apenas para o perfil `admin` |
+| Datas | O formato de troca é `AAAA-MM-DD`; a exibição é `dd/mm/aaaa` |
